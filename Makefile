@@ -1,22 +1,27 @@
 CC := gcc
-CFLAGS := -std=c11 -Wall -Wextra -g
+CFLAGS :=  -Wall -Wextra -g 
 
 TARGET := ipp_interpret
 BUILD_DIR := build
 INCLUDE_DIR := headders
 SOURCE_DIR := src
 
-SRCS := $(wildcard $(SOURCE_DIR)/ *.c)
-OBJS := $(SRCS:%.cpp=$(BUILD_DIR)/%.o)
+SRCS := $(wildcard $(SOURCE_DIR)/*.c)
+OBJS := $(patsubst $(SOURCE_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
 HEADDERS := $(wildcard $(INCLUDE_DIR)/*.h)
 
-all: $(TARGET)
-	cp $(BUILD_DIR)/$(TARGET) .
+all: $(TARGET) bld_dir
 
-$(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $(TARGET)
+$(TARGET): $(OBJS) bld_dir
+	$(CC) $(CFLAGS) $(OBJS) -I. -o $(TARGET)
 
-.PHONY: all clean run
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADDERS) bld_dir
+	$(CC) $(CFLAGS) -I. -c $< -o $@
+
+bld_dir:
+	@mkdir -p $(BUILD_DIR)
+
+.PHONY: all clean
 
 clean:
 	rm -rf $(BUILD_DIR) $(TARGET)
