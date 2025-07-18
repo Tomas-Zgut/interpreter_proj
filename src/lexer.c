@@ -64,7 +64,7 @@ static ins_data_t instruction_map[] = {
 	{INS_CREATE_F, "CREATEFRAME"},
 };
 
-ins_data_indexes ins_index_map[] = {
+static ins_data_indexes ins_index_map[] = {
 	{-1, -1}, {-1, -1}, {0, 4},	  {4, 9},	{9, 17},  {17, 21},
 	{21, 26}, {26, 29}, {29, 31}, {31, 34}, {-1, -1}, {35, 36},
 };
