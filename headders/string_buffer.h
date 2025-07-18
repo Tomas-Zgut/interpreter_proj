@@ -1,7 +1,6 @@
 #ifndef __STRING_BUFFER_H__
 #define __STRING_BUFFER_H__
 
-#include "tokens.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -50,6 +49,7 @@ typedef struct {
  */
 #define sb_get_substring(buff, offset, len)                                    \
 	_Generic((buff),                                                           \
+		StringBuffer *: __sb_get_substring_impl,                               \
 		const StringBuffer *: __sb_get_substring_impl,                         \
 		const StringData *: __sb_get_substring_impl,                           \
 		const StringView *: __sb_get_substring_impl)(buff->data, buff->length, \
@@ -73,6 +73,7 @@ typedef struct {
  */
 #define sb_get_view(buff, offset)                                              \
 	_Generic((buff),                                                           \
+		StringBuffer *: __sb_get_substring_impl,                               \
 		const StringBuffer *: __sb_get_substring_impl,                         \
 		const StringData *: __sb_get_substring_impl,                           \
 		const StringView *: __sb_get_substring_impl)(buff->data, buff->length, \
@@ -95,8 +96,8 @@ typedef struct {
  */
 #define sb_copy(buff)                                                          \
 	_Generic((buff),                                                           \
-		StringBuffer *: __sb_copy_impl,                                        \
 		const StringBuffer *: __sb_copy_impl,                                  \
+		StringBuffer *: __sb_copy_impl,                                        \
 		const StringData *: __sb_copy_impl,                                    \
 		const StringView *: __sb_copy_impl)(buff->data, buff->length)
 
@@ -118,14 +119,15 @@ typedef struct {
  */
 #define sb_copy_mut(buff, out)                                                 \
 	_Generic((buff),                                                           \
-		StringBuffer *: __sb_copy_mut_impl,                                    \
 		const StringBuffer *: __sb_copy_mut_impl,                              \
+		StringBuffer *: __sb_copy_mut_impl,                                    \
 		const StringData *: __sb_copy_mut_impl,                                \
 		const StringView *: __sb_copy_mut_impl)(buff->data, buff->length, out)
 
 #define sb_free(buff)                                                          \
-	_Generic((buff)StringBuffer *: __sb_free,                                  \
-		const StringData *: _sd_free)(buff)
+	_Generic((buff),                                                           \
+		StringBuffer *: __sb_free,                                             \
+		const StringData *: __sd_free)(buff)
 
 bool sb_init(StringBuffer *buff, size_t initial_capacity);
 bool sb_append_char(StringBuffer *buf, char c);

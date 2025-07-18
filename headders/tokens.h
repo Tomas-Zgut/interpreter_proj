@@ -2,6 +2,7 @@
 #define __TOKENS_H__
 
 #include "opcodes.h"
+#include "string_buffer.h"
 #include <stdint.h>
 typedef enum {
 	TOKEN_INSTRUCTION,
@@ -10,6 +11,7 @@ typedef enum {
 	TOKEN_BOOL,
 	TOKEN_NIL,
 	TOKEN_VARIABLE,
+	TOKEN_LABEL,
 	TOKEN_UNKNOWN,
 	TOKEN_EOF,
 } token_type;
@@ -20,10 +22,7 @@ typedef enum {
 	TF,
 } frame_type;
 
-typedef struct {
-	char *str_data;
-	uint64_t str_len;
-} string_t;
+typedef StringData string_t;
 
 typedef uint64_t integer_t;
 
@@ -34,7 +33,7 @@ typedef struct {
 } variable_t;
 
 typedef union {
-	string_t string_val;
+	const StringData *string_val;
 	integer_t int_val;
 	variable_t var_data;
 	opcode_type ins_opcode;
