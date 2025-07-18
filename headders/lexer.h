@@ -5,6 +5,36 @@
 #include "tokens.h"
 #include <stdbool.h>
 #include <stdio.h>
+
+typedef struct {
+	StringBuffer current_line_buffer; // Dynamický buffer pro aktuální řádek
+	size_t current_pos_in_line;		  // Aktuální pozice v current_line_bufferu
+	bool line_is_exhausted; // zda je aktuální řádek zpracován a je potřeba
+							// načíst nový
+
+	uint32_t line_number; // Aktuální číslo řádku ve vstupním souboru
+	FILE *input_stream;	  // Kdyby byla poteřeba na vstupní soubor
+						  // Místo na další
+} LexerContext;
+
+/**
+ * @brief Inicializuje lexer kontext.
+ *
+ * @param ctx Ukazatel na strukturu LexerContext.
+ *
+ * @param input Ukazatel na vstupní soubor (např. stdin).
+ *
+ * @return true při úspěchu, false při selhání (např. alokace paměti).
+ */
+bool lexer_init(LexerContext *ctx, FILE *input);
+
+/**
+ * @brief Uvolní paměť alokovanou lexer kontextem.
+ *
+ * @param ctx Ukazatel na strukturu LexerContext.
+ */
+void lexer_free(LexerContext *ctx);
+
 /**
  * @brief function to get a new token
  *
@@ -12,7 +42,7 @@
  *
  * @returns a pointer to a new token.
  */
-token_t *get_next_token();
+token_t *get_next_token(LexerContext *ctx);
 
 /**
  * @brief function to check if the input contains a comment
@@ -72,7 +102,7 @@ bool is_literal(const StringView *buff);
  *
  * @todo implement
  */
-bool lex_variable(const StringView *buff, token_t token);
+bool lex_variable(const StringView *buff, token_t *token);
 
 /**
  * @brief function  to create a literal token
@@ -88,7 +118,7 @@ bool lex_variable(const StringView *buff, token_t token);
  *
  * @todo implement
  */
-bool lex_literal(const StringView *buff, token_t token);
+bool lex_literal(const StringView *buff, token_t *token);
 
 /**
  * @brief function  to create an intruction token

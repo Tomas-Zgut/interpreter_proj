@@ -69,6 +69,178 @@ static ins_data_indexes ins_index_map[] = {
 	{21, 26}, {26, 29}, {29, 31}, {31, 34}, {-1, -1}, {35, 36},
 };
 
+/**
+ * @brief Interní funkce pro načtení dalšího řádku ze vstupního proudu do
+ * bufferu lexeru.
+ *
+ * @param ctx Ukazatel na lexer kontext.
+ *
+ * @return true při úspěšném načtení řádku, false při konci souboru (EOF) nebo
+ * chybě.
+ */
+bool lexer_read_next_line(LexerContext *ctx) {
+	sb_reset(&ctx->current_line_buffer);
+
+	int c;
+	bool line_read = false;
+	ctx->line_number++;
+
+	while ((c = fgetc(ctx->input_stream)) != EOF) {
+		if (c == '\n') {
+			sb_append_char(&ctx->current_line_buffer, (char)c);
+			line_read = true;
+			break;
+		}
+		if (!sb_append_char(&ctx->current_line_buffer, (char)c)) {
+			fprintf(stderr, "Chyba: Nedostatek paměti při čtení řádku %u.\n",
+					ctx->line_number);
+			return false;
+		}
+		line_read = true;
+	}
+
+	if (!line_read && c == EOF && ctx->current_line_buffer.length == 0) {
+		return false;
+	}
+
+	ctx->current_pos_in_line = 0;
+	ctx->line_is_exhausted = false;
+	return true;
+}
+
+// Implementace funkcí deklarovaných v lexer.h, snad dostatečně dobře/alespoň
+// decently (chtěl jsem pomoct XD)
+bool lexer_init(LexerContext *ctx, FILE *input) {
+	if (!sb_init(&ctx->current_line_buffer, 0)) { // Inicializace bufferu
+		return false;
+	}
+	ctx->current_pos_in_line = 0;
+	ctx->line_is_exhausted = true; // načíst první řádek
+	ctx->line_number = 0;
+	ctx->input_stream = input;
+	return true;
+}
+
+void lexer_free(LexerContext *ctx) {
+	sb_free(&ctx->current_line_buffer);
+	// další alokace možná později?
+}
+
+/*
+1. Zajištění, že máme co zpracovávat (načtený řádek)
+2. Přeskakování bílých znaků a zpracování komentářů
+3. Extrakce a rozpoznávání tokenu
+*/
+
+token_t *get_next_token(LexerContext *ctx) {
+	if (ctx->line_is_exhausted ||
+		ctx->current_pos_in_line >= ctx->current_line_buffer.length) {
+		if (!lexer_read_next_line(ctx)) {
+			token_t *eof_token = (token_t *)malloc(sizeof(token_t));
+			if (eof_token == NULL) {
+				perror("Chyba alokace token_t pro EOF");
+				return NULL;
+			}
+			eof_token->type = TOKEN_EOF;
+			return eof_token;
+		}
+	}
+
+	while (ctx->current_pos_in_line < ctx->current_line_buffer.length) {
+		char current_char =
+			ctx->current_line_buffer.data[ctx->current_pos_in_line];
+
+		if (isspace(current_char)) {
+			ctx->current_pos_in_line++;
+			continue;
+		}
+
+		if (current_char == '#') {
+			ctx->line_is_exhausted = true;
+			return get_next_token(ctx);
+		}
+
+		break;
+	}
+
+	if (ctx->current_pos_in_line >= ctx->current_line_buffer.length) {
+		ctx->line_is_exhausted = true;
+		return get_next_token(ctx);
+	}
+
+	token_t *new_token = (token_t *)malloc(sizeof(token_t));
+	if (new_token == NULL) {
+		perror("Chyba alokace token_t");
+		return NULL;
+	}
+	new_token->type = TOKEN_UNKNOWN;
+	new_token->value.int_val = 0;
+
+	// logika pro určení délky aktuálního tokenu + typu
+	size_t start_token_pos = ctx->current_pos_in_line;
+	size_t current_token_len = 0;
+
+	// smyčka pro nalezení konce tokenu (# nebo whitespace), zjednodušeně
+	while (start_token_pos + current_token_len <
+			   ctx->current_line_buffer.length &&
+		   !isspace(ctx->current_line_buffer
+						.data[start_token_pos + current_token_len]) &&
+		   ctx->current_line_buffer.data[start_token_pos + current_token_len] !=
+			   '#') {
+		current_token_len++;
+	}
+
+	// StringView pro právě nalezený segment textu
+	const StringView token_view = sb_get_substring(
+		(&ctx->current_line_buffer), start_token_pos, current_token_len);
+
+	// Basically pseudokódy na ty is_(něco) funkce a musí být doplněny
+
+	if (is_instruction(&token_view)) {
+		new_token->type = TOKEN_INSTRUCTION;
+		if (!lex_instruction(&token_view, new_token)) {
+			fprintf(stderr, "Chyba: Neznámá/nevalidní instrukce na řádku %u.\n",
+					ctx->line_number);
+			new_token->type = TOKEN_UNKNOWN;
+			// Možná uvolnit new_token->value.ins_opcode, pokud by byla nějaká
+			// alokace uvnitř lex_instruction
+		}
+	} else if (is_variable(&token_view)) {
+		new_token->type = TOKEN_VARIABLE;
+		if (!lex_variable(&token_view, new_token)) {
+			fprintf(stderr, "Chyba: Nevalidní proměnná na řádku %u.\n",
+					ctx->line_number);
+			new_token->type = TOKEN_UNKNOWN;
+		}
+	} else if (is_label(&token_view)) {
+		new_token->type = TOKEN_LABEL;
+		if (!lex_label(&token_view, new_token)) {
+			fprintf(stderr, "Chyba: Nevalidní návěští na řádku %u.\n",
+					ctx->line_number);
+			new_token->type = TOKEN_UNKNOWN;
+		}
+	}
+
+	else if (is_literal(&token_view)) {
+		if (!lex_literal(&token_view, new_token)) {
+			fprintf(stderr, "Chyba: Nevalidní literál na řádku %u.\n",
+					ctx->line_number);
+			new_token->type = TOKEN_UNKNOWN;
+		}
+	}
+
+	// Doplnit další else if pro další typy tokenů, např. typy (int, string,
+	// bool) Pokud nic z toho, pak je to neznámý token
+	else {
+		fprintf(stderr, "Chyba: Neznámý token '%s' na řádku %u.\n",
+				token_view.data, ctx->line_number);
+		new_token->type = TOKEN_UNKNOWN;
+	}
+	ctx->current_pos_in_line += current_token_len;
+
+	return new_token;
+}
+
 bool is_comment(const StringView *buff) { return buff->data[0] == '#'; }
 
 /**
