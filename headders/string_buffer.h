@@ -1,9 +1,11 @@
 #ifndef __STRING_BUFFER_H__
 #define __STRING_BUFFER_H__
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 /**
  * @brief Struct represents a mutable String type
  */
@@ -52,8 +54,8 @@ typedef struct {
 		StringBuffer *: __sb_get_substring_impl,                               \
 		const StringBuffer *: __sb_get_substring_impl,                         \
 		const StringData *: __sb_get_substring_impl,                           \
-		const StringView *: __sb_get_substring_impl)(buff->data, buff->length, \
-													 offset, len)
+		const StringView *: __sb_get_substring_impl)(                          \
+		(buff)->data, (buff)->length, offset, len)
 /**
  * @brief Overloaded function for returing a substring
  *
@@ -76,8 +78,8 @@ typedef struct {
 		StringBuffer *: __sb_get_substring_impl,                               \
 		const StringBuffer *: __sb_get_substring_impl,                         \
 		const StringData *: __sb_get_substring_impl,                           \
-		const StringView *: __sb_get_substring_impl)(buff->data, buff->length, \
-													 offset, buff->length)
+		const StringView *: __sb_get_substring_impl)(                          \
+		(buff)->data, (buff)->length, offset, (buff)->length)
 /**
  * @brief Overloaded function for creating a  copy of a string
  *
@@ -87,19 +89,19 @@ typedef struct {
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
  * - StringData -> owning immutable string type @see StringData
  *
- * @param buff - buffer to copy (type dependent)
+ * @param buff[in] - buffer to copy (type dependent)
+ * @param out[out] - destination for the copy
  *
- * @returns an owing immtable copy of the buffer if copying was succesfull, NULL
- * otherwise @see StringData
+ * @returns true if copying was succesfull, false otherwise
  *
  * @see __sb_copy_impl
  */
-#define sb_copy(buff)                                                          \
+#define sb_copy(buff, out)                                                     \
 	_Generic((buff),                                                           \
 		const StringBuffer *: __sb_copy_impl,                                  \
 		StringBuffer *: __sb_copy_impl,                                        \
 		const StringData *: __sb_copy_impl,                                    \
-		const StringView *: __sb_copy_impl)(buff->data, buff->length)
+		const StringView *: __sb_copy_impl)((buff)->data, (buff)->length, out)
 
 /**
  * @brief Overloaded function for creating a  copy of a string
@@ -111,7 +113,7 @@ typedef struct {
  * - StringData -> owning immutable string type @see StringData
  *
  * @param buff[in] - buffer to copy (type dependent)
- * @param out[out] - buffer where to store the copy
+ * @param out[out] - destination for the copy
  *
  * @returns true if copying was succesfull, false otherwise
  *
@@ -122,12 +124,11 @@ typedef struct {
 		const StringBuffer *: __sb_copy_mut_impl,                              \
 		StringBuffer *: __sb_copy_mut_impl,                                    \
 		const StringData *: __sb_copy_mut_impl,                                \
-		const StringView *: __sb_copy_mut_impl)(buff->data, buff->length, out)
+		const StringView *: __sb_copy_mut_impl)((buff)->data, (buff)->length,  \
+												out)
 
 #define sb_free(buff)                                                          \
-	_Generic((buff),                                                           \
-		StringBuffer *: __sb_free,                                             \
-		const StringData *: __sd_free)(buff)
+	_Generic((buff), StringBuffer *: __sb_free, StringData *: __sd_free)(buff)
 
 bool sb_init(StringBuffer *buff, size_t initial_capacity);
 bool sb_append_char(StringBuffer *buf, char c);
@@ -162,26 +163,31 @@ void __sb_free(StringBuffer *buf);
  *
  * @note This function should not be used @see sb_free
  */
-void __sd_free(const StringData *buff);
+void __sd_free(StringData *buff);
 
 /**
  * @brief This function implements creating an immutable copy of a string
  *
- * @param buff: pointer to character data
- * @param buff_len: length of the character data
+ * @param buff[in]: pointer to character data
+ * @param buff_len[in]: length of the character data
+ * @param out[out]: destination for the copy
  *
  * @note This function should not be used @see sb_copy
+ *
+ * @returns true if copying was succesfull, false otherwise
  */
-const StringData *__sb_copy_impl(const char *buff, size_t buff_len);
+bool __sb_copy_impl(const char *buff, size_t buff_len, StringData *out);
 
 /**
  * @brief This function imlpements creating a mutable copy of a string
  *
  * @param buff[in]: pointer to character data
  * @param buff_len[in]: length of the character data
- * @param out[out]: destination buffer for the copy
+ * @param out[out]: destination for the copy
  *
  * @note This funstion should not be used @see sb_copy_mut
+ *
+ * @returns true if copying was succesfull, false otherwise
  */
 bool __sb_copy_mut_impl(const char *buff, size_t buff_len, StringBuffer *out);
 #endif

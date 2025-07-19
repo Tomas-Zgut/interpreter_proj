@@ -59,29 +59,31 @@ StringView __sb_get_substring_impl(const char *buff, size_t buff_len,
 								   size_t offset, size_t len) {
 	assert(offset <= buff_len);
 	assert(len <= buff_len - offset);
+	assert(buff != NULL);
+
+	if (len == 0) {
+		len = buff_len;
+	}
+
 	return (StringView){buff + offset, len};
 }
 
-const StringData *__sb_copy_impl(const char *buff, size_t buff_len) {
-	if (buff_len > SIZE_MAX - sizeof(StringData)) {
-		perror("Error: Memory reallocation failure");
-		return NULL;
-	}
-	size_t alloc_size = sizeof(StringData) + buff_len;
-	void *mem = malloc(alloc_size);
+bool __sb_copy_impl(const char *buff, size_t buff_len, StringData *out) {
+	assert(buff != NULL);
+	assert(out != NULL);
+
+	char *mem = malloc(buff_len);
 
 	if (mem == NULL) {
 		perror("Error: Memory reallocation failure");
-		return NULL;
+		return false;
 	}
 
-	StringData *data = (StringData *)mem;
-	uintptr_t data_addr = (uintptr_t)mem + sizeof(StringData);
-	data->length = buff_len;
-	data->data = (const char *)data_addr;
-	memcpy((void *)data->data, buff, buff_len);
+	memcpy(mem, buff, buff_len);
+	out->data = mem;
+	out->length = buff_len;
 
-	return (const StringData *)data;
+	return true;
 }
 
 void __sb_free(StringBuffer *buf) {
@@ -90,4 +92,8 @@ void __sb_free(StringBuffer *buf) {
 	buf->length = 0;
 	buf->capacity = 0;
 }
-void __sd_free(const StringData *buff) { free((void *)buff); }
+void __sd_free(StringData *buff) {
+	free((void *)buff->data);
+	buff->data = NULL;
+	buff->length = 0;
+}

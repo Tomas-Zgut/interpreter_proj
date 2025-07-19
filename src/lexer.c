@@ -192,7 +192,7 @@ token_t *get_next_token(LexerContext *ctx) {
 
 	// StringView pro právě nalezený segment textu
 	const StringView token_view = sb_get_substring(
-		(&ctx->current_line_buffer), start_token_pos, current_token_len);
+		&ctx->current_line_buffer, start_token_pos, current_token_len);
 
 	// Basically pseudokódy na ty is_(něco) funkce a musí být doplněny
 
