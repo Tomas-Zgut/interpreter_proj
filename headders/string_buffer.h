@@ -81,7 +81,7 @@ typedef struct {
 		StringData *: __sb_get_substring_impl,                           	   \
 		const StringData *: __sb_get_substring_impl,                           \
 		const StringView *: __sb_get_substring_impl)(                          \
-		(buff)->data, (buff)->length, offset, (buff)->length)
+		(buff)->data, (buff)->length, offset, (buff)->length - offset)
 /**
  * @brief Overloaded function for creating a  copy of a string
  *

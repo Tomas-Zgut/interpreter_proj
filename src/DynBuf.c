@@ -56,8 +56,7 @@ bool __sb_copy_mut_impl(const char *buf, size_t buff_len, StringBuffer *out) {
 	return true;
 }
 
-StringView __sb_get_substring_impl(const char *buff, size_t buff_len,
-								   size_t offset, size_t len) {
+StringView __sb_get_substring_impl(const char *buff, size_t buff_len, size_t offset, size_t len) {
 	assert(offset <= buff_len);
 	assert(len <= buff_len - offset);
 	assert(buff != NULL);
