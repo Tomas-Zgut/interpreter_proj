@@ -5,15 +5,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 /**
- * @brief Struct represents a mutable String type
+ * @brief Struct represents a mutable string type
  */
 typedef struct {
 	char *data;		 // pointer to data (owns)
 	size_t length;	 // lenght of the string
 	size_t capacity; // capacity for string
-} StringBuffer;
+} StringMut;
 
 /**
  * @brief Struct represents a immutable non owning view into a string type
@@ -29,16 +29,16 @@ typedef struct {
 typedef struct {
 	const char *data; // pointer to data (owing)
 	size_t length;	  // length of the string
-} StringData;
+} String;
 
 /**
  * @brief Overloaded function for returing a substring
  *
  * @par Function creats a substring from a buffer.
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
+ * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
- * - StringData -> owning immutable string type @see StringData
+ * - String -> owning immutable string type @see String
  *
  * @param buff - buffer to extract substring from (type dependent)
  * @param offset - offset in the buffer where the substring starts
@@ -49,22 +49,23 @@ typedef struct {
  *
  * @see __sb_get_substring_impl
  */
-#define sb_get_substring(buff, offset, len)                                    \
-	_Generic((buff),                                                           \
-		StringBuffer *: __sb_get_substring_impl,                               \
-		const StringBuffer *: __sb_get_substring_impl,                         \
-		StringData *: __sb_get_substring_impl,                           	   \
-		const StringData *: __sb_get_substring_impl,                           \
-		const StringView *: __sb_get_substring_impl)(                          \
-		(buff)->data, (buff)->length, offset, len)
+#define sb_get_substring(buff, offset, len)			\
+	_Generic((buff),								\
+		StringMut *: __sb_get_substring_impl,		\
+		const StringMut *: __sb_get_substring_impl,	\
+		String *: __sb_get_substring_impl,			\
+		const String *: __sb_get_substring_impl,	\
+		const StringView *: __sb_get_substring_impl	\
+)((buff)->data, (buff)->length, offset, len)
+
 /**
  * @brief Overloaded function for returing a substring
  *
  * @par Function creats a substring from a buffer.
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
+ * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
- * - StringData -> owning immutable string type @see StringData
+ * - String -> owning immutable string type @see String
  * The lenght of the substring returned is till the end of the buffer
  *
  * @param buff - buffer to extract substring from (type dependent)
@@ -74,79 +75,83 @@ typedef struct {
  *
  * @see __sb_get_substring_impl
  */
-#define sb_get_view(buff, offset)                                              \
-	_Generic((buff),                                                           \
-		StringBuffer *: __sb_get_substring_impl,                               \
-		const StringBuffer *: __sb_get_substring_impl,                         \
-		StringData *: __sb_get_substring_impl,                           	   \
-		const StringData *: __sb_get_substring_impl,                           \
-		const StringView *: __sb_get_substring_impl)(                          \
-		(buff)->data, (buff)->length, offset, (buff)->length - offset)
+#define sb_get_view(buff, offset)					\
+	_Generic((buff),								\
+		StringMut *: __sb_get_substring_impl,		\
+		const StringMut *: __sb_get_substring_impl,	\
+		String *: __sb_get_substring_impl,			\
+		const String *: __sb_get_substring_impl,	\
+		const StringView *: __sb_get_substring_impl	\
+)((buff)->data, (buff)->length, offset, (buff)->length - (offset))
+
 /**
  * @brief Overloaded function for creating a  copy of a string
  *
  * @par Function creats an immutable copy of a string type
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
+ * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
- * - StringData -> owning immutable string type @see StringData
+ * - String -> owning immutable string type @see String
  *
- * @param buff[in] - buffer to copy (type dependent)
  * @param out[out] - destination for the copy
+ * @param buff[in] - buffer to copy (type dependent)
  *
  * @returns true if copying was succesfull, false otherwise
  *
  * @see __sb_copy_impl
  */
-#define sb_copy(buff, out)                                                     \
-	_Generic((buff),                                                           \
-		StringBuffer *: __sb_copy_impl,                                        \
-		const StringBuffer *: __sb_copy_impl,                                  \
-		StringData *: __sb_copy_impl,                                    	   \
-		const StringData *: __sb_copy_impl,                                    \
-		const StringView *: __sb_copy_impl)((buff)->data, (buff)->length, (out))
+#define sb_copy(out,buff)					\
+	_Generic((buff),						\
+		StringMut *: __sb_copy_impl,		\
+		const StringMut *: __sb_copy_impl,	\
+		String *: __sb_copy_impl,			\
+		const String *: __sb_copy_impl,		\
+		const StringView *: __sb_copy_impl	\
+)((out),(buff)->data, (buff)->length)
 
 /**
  * @brief Overloaded function for creating a  copy of a string
  *
  * @par Function creats a mutable copy of a string type
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
+ * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
- * - StringData -> owning immutable string type @see StringData
+ * - String -> owning immutable string type @see String
  *
- * @param buff[in] - buffer to copy (type dependent)
  * @param out[out] - destination for the copy
+ * @param buff[in] - buffer to copy (type dependent)
  *
  * @returns true if copying was succesfull, false otherwise
  *
  * @see __sb_copy_mut_impl
  */
-#define sb_copy_mut(buff, out)                                                 \
-	_Generic((buff),                                                           \
-		StringBuffer *: __sb_copy_mut_impl,                                    \
-		const StringBuffer *: __sb_copy_mut_impl,                              \
-		StringData *: __sb_copy_mut_impl,                                	   \
-		const StringData *: __sb_copy_mut_impl,                                \
-		const StringView *: __sb_copy_mut_impl)((buff)->data, (buff)->length,  \
-												(out))
+#define sb_copy_mut(out,buff)					\
+	_Generic((buff),							\
+		StringMut *: __sb_copy_mut_impl,		\
+		const StringMut *: __sb_copy_mut_impl,	\
+		String *: __sb_copy_mut_impl,			\
+		const String *: __sb_copy_mut_impl,		\
+		const StringView *: __sb_copy_mut_impl	\
+)((out), (buff)->data, (buff)->length)
 
 /**
  * @brief Overloaded function to free a string type
  * 
  * @par Function frees and deinitializes a string type.
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
- * - StringData -> owning immutable string type @see StringData
+ * - StringMut  -> mutable string type @see StringMut
+ * - String -> owning immutable string type @see String
  * 
  * @param buff: string to free (type dependent)
  * 
  * @see__sb_free
  * @see _sd_free
  */
-#define sb_free(buff)                                                          \
-	_Generic((buff), StringBuffer *: __sb_free, StringData *: __sd_free)((buff))
-
+#define sb_free(buff)		\
+	_Generic((buff), 		\
+	StringMut *: __sb_free, \
+	String *: __sd_free		\
+)((buff))
 
 /**
  * @brief private macro for accesing fields of a string type
@@ -158,13 +163,13 @@ typedef struct {
  * @see sb_concat
  * @see sb_concat_mut
  */
-#define __FIELD_ACCES(buff,field)				\
-	_Generic((buff),							\
-		StringBuffer *: (buff)->field, 			\
-		const StringBuffer *: (buff)->field,	\
-		StringData *: (buff)->field, 			\
-		const StringData *: (buff)->field, 		\
-		const StringView *:(buff)->field 		\
+#define __FIELD_ACCES(buff,field)			\
+	_Generic((buff),						\
+		StringMut *: (buff)->field,			\
+		const StringMut *: (buff)->field,	\
+		String *: (buff)->field, 			\
+		const String *: (buff)->field, 		\
+		const StringView *:(buff)->field	\
 )
 
 /**
@@ -172,9 +177,9 @@ typedef struct {
  * 
  * @par function returns the length of a string type
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
+ * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
- * - StringData -> owning immutable string type @see StringData
+ * - String -> owning immutable string type @see String
  * 
  * @param buff: string type (type dependent)
  * 
@@ -188,9 +193,9 @@ typedef struct {
  * @par Function indexes into a string type and returns the char at
  * the given index.
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
+ * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
- * - StringData -> owning immutable string type @see StringData
+ * - String -> owning immutable string type @see String
  * 
  * @param buff: target buffer (type dependent)
  * @param index: inex of the buffer
@@ -200,24 +205,23 @@ typedef struct {
  * @warning No bounds check, use carefuly!
  * @see __sb_get_char_at_impl
  */
-#define sb_get_char_at(buff, index) 					\
-	_Generic((buff), 									\
-		StringBuffer *: __sb_get_char_at_impl, 			\
-		const StringBuffer *: __sb_get_char_at_impl,	\
-		StringData *: __sb_get_char_at_impl, 			\
-		const StringData *: __sb_get_char_at_impl, 		\
-		const StringView *:__sb_get_char_at_impl 		\
+#define sb_get_char_at(buff, index)					\
+	_Generic((buff),								\
+		StringMut *: __sb_get_char_at_impl,			\
+		const StringMut *: __sb_get_char_at_impl,	\
+		String *: __sb_get_char_at_impl, 			\
+		const String *: __sb_get_char_at_impl, 		\
+		const StringView *:__sb_get_char_at_impl	\
 )((buff)->data, index)
-
 
 /**
  * @brief Overloaded function that appends a string to mutable srting
  * 
  * @par Function appends the value of a string type to a mutable string
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
+ * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
- * - StringData -> owning immutable string type @see StringData
+ * - String -> owning immutable string type @see String
  * 
  * @param[out] out: mutable string output
  * @param[in] buff: string to append (type dependent)
@@ -226,13 +230,13 @@ typedef struct {
  * 
  * @see __sb_append_string_impl
  */
-#define sb_append_string(out,buff) 						\
-	_Generic((buff), 									\
-		StringBuffer *: __sb_append_string_impl, 		\
-		const StringBuffer *: __sb_append_string_impl,	\
-		StringData *:__sb_append_string_impl,			\
-		const StringData *:__sb_append_string_impl,		\
-		const StringView *:__sb_append_string_impl 		\
+#define sb_append_string(out,buff)					\
+	_Generic((buff),								\
+		StringMut *: __sb_append_string_impl, 		\
+		const StringMut *: __sb_append_string_impl,	\
+		String *:__sb_append_string_impl,			\
+		const String *:__sb_append_string_impl,		\
+		const StringView *:__sb_append_string_impl	\
 )((out),(buff)->data, (buff)->length)	
 
 /**
@@ -240,13 +244,13 @@ typedef struct {
  * into an immutable buffer destination.
  *
  * @par Funcion concatenates data genericaly between any 2 string types and
- * saves the result into an immutable string @see StringData.
+ * saves the result into an immutable string @see String.
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
+ * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
- * - StringData -> owning immutable string type @see StringData
+ * - String -> owning immutable string type @see String
  * 
- * @param out[out]: immutable srting @see StringData
+ * @param out[out]: immutable srting @see String
  * @param buff1[in]: string to concat (type dependent)
  * @param buff2[in]: string to concat (type dependent)
  * 
@@ -257,10 +261,11 @@ typedef struct {
 #define sb_concat(out,buff1, buff2) 	\
 	__sb_concat_impl(					\
 		(out),							\
-		__FIELD_ACCES(buff1,data), 		\
+		__FIELD_ACCES(buff1,data),		\
 		__FIELD_ACCES(buff1,length),	\
 		__FIELD_ACCES(buff2,data),		\
-		__FIELD_ACCES(buff2,length))
+		__FIELD_ACCES(buff2,length)		\
+)
 
 
 /**
@@ -268,12 +273,12 @@ typedef struct {
  * into a mutable buffer destination.
  * 
  * @par Funcion concatenates data genericaly between any 2 string types and
- * saves the reuslt into a mutable string @see StringBuffer.
+ * saves the reuslt into a mutable string @see StringMut.
  * Supported buffer types:
- * - StringBuffer  -> mutable string type @see StringBuffer
+ * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
- * - StringData -> owning immutable string type @see StringData
- * @param out[out]: mutable srting @see StringBuffer
+ * - String -> owning immutable string type @see String
+ * @param out[out]: mutable srting @see StringMut
  * @param buff1[in]: string to concat (type dependent)
  * @param buff2[in]: string to concat (type dependent)
  * 
@@ -281,19 +286,41 @@ typedef struct {
  * 
  * @see __sb_concat_mut_impl
  */
-#define sb_concat_mut(out,buff1, buff2) 	\
-	__sb_concat_mut_impl(					\
-		(out),								\
-		__FIELD_ACCES(buff1,data), 			\
-		__FIELD_ACCES(buff1,length),		\
-		__FIELD_ACCES(buff2,data),			\
-		__FIELD_ACCES(buff2,length))
+#define sb_concat_mut(out,buff1, buff2) \
+	__sb_concat_mut_impl(				\
+		(out),							\
+		__FIELD_ACCES(buff1,data),		\
+		__FIELD_ACCES(buff1,length),	\
+		__FIELD_ACCES(buff2,data),		\
+		__FIELD_ACCES(buff2,length)		\
+)
 
+/**
+ * @brief Overloaded function for printing strings
+ * 
+ * @par Function prints a string type.
+ * Supported buffer types:
+ * - StringMut  -> mutable string type @see StringMut
+ * - StringVeiw -> non owning immutable view into a buffer @see StringView
+ * - String -> owning immutable string type @see String
+ * 
+ * @warning Function only supports printng strings whose length is < INT32_MAX
+ * 
+ * @see __sb_print_impl
+ */
+#define sb_print(buff)					\
+	_Generic((buff),					\
+	StringMut *: __sb_print_impl,		\
+	const StringMut *: __sb_print_impl,	\
+	String *: __sb_print_impl,			\
+	const String *: __sb_print_impl,	\
+	const StringView *: __sb_print_impl	\
+)((buff)->data, (buff)->length)	
 
+bool sb_init(StringMut *buff, size_t initial_capacity);
+bool sb_append_char(StringMut *buf, char c);
+void sb_reset(StringMut *buf);
 
-bool sb_init(StringBuffer *buff, size_t initial_capacity);
-bool sb_append_char(StringBuffer *buf, char c);
-void sb_reset(StringBuffer *buf);
 /**
  * @brief Funcion implements creating substrings from raw string
  *
@@ -306,8 +333,8 @@ void sb_reset(StringBuffer *buf);
  *
  * @returns a non owing immtable view into the buffer @see StringView
  */
-StringView __sb_get_substring_impl(const char *buff, size_t buff_len,
-								   size_t offset, size_t len);
+StringView __sb_get_substring_impl(const char *buff, size_t buff_len, size_t offset, size_t len);
+
 /**
  * @brief Funcion frees a string type
  *
@@ -315,7 +342,8 @@ StringView __sb_get_substring_impl(const char *buff, size_t buff_len,
  *
  * @note This function should not be used @see sb_free
  */
-void __sb_free(StringBuffer *buf);
+void __sb_free(StringMut *buf);
+
 /**
  * @brief Funcion frees a string type
  *
@@ -323,33 +351,33 @@ void __sb_free(StringBuffer *buf);
  *
  * @note This function should not be used @see sb_free
  */
-void __sd_free(StringData *buff);
+void __sd_free(String *buff);
 
 /**
  * @brief Function implements creating an immutable copy of a raw string
  *
+ * @param out[out]: destination for the copy
  * @param buff[in]: raw string
  * @param buff_len[in]: length of raw string
- * @param out[out]: destination for the copy
  *
  * @note This function should not be used @see sb_copy
  *
  * @returns true if copying was succesfull, false otherwise
  */
-bool __sb_copy_impl(const char *buff, size_t buff_len, StringData *out);
+bool __sb_copy_impl(String *out, const char *buff, size_t buff_len);
 
 /**
  * @brief This function imlpements creating a mutable copy of a raw string
  *
+ * @param out[out]: destination for the copy
  * @param buff[in]: raw string
  * @param buff_len[in]: length of raw string
- * @param out[out]: destination for the copy
  *
  * @note This funstion should not be used @see sb_copy_mut
  *
  * @returns true if copying was succesfull, false otherwise
  */
-bool __sb_copy_mut_impl(const char *buff, size_t buff_len, StringBuffer *out);
+bool __sb_copy_mut_impl(StringMut *out, const char *buff, size_t buff_len);
 
 /**
  * @brief Function that indexes into a raw string
@@ -364,13 +392,14 @@ bool __sb_copy_mut_impl(const char *buff, size_t buff_len, StringBuffer *out);
  * @returns char at the specified index of a given buffer
  */
 static inline char __sb_get_char_at_impl(const char *buff, size_t index) {
+	assert(buff != NULL);
 	return buff[index];
 }
 
 /**
  * @brief Function appends a raw string to a mutable string
  * 
- * @param out[out]: mutable srting @see StringBuffer
+ * @param out[out]: mutable srting @see StringMut
  * @param buff[in]: raw string  to append
  * @param buff_len[in]: length of raw string 
  * 
@@ -378,12 +407,12 @@ static inline char __sb_get_char_at_impl(const char *buff, size_t index) {
  * 
  * @returns true if append was succesful, false otherwise.
  */
-bool __sb_append_string_impl(StringBuffer *out, const char *buff, size_t buff_len);
+bool __sb_append_string_impl(StringMut *out, const char *buff, size_t buff_len);
 
 /**
- * @brief Function concatenates 2 string into an immutable string
+ * @brief Function concatenates 2 raw strings into an immutable string
  * 
- * @param out[out]: immutable srting @see StringData
+ * @param out[out]: immutable srting @see String
  * @param buff1[in]: raw string to concatenate
  * @param buff_len1[in]: length of 1st raw string
  * @param buff2[in]: raw string to concatenate
@@ -393,13 +422,12 @@ bool __sb_append_string_impl(StringBuffer *out, const char *buff, size_t buff_le
  * 
  * @returns true if concatenation was succesful, false otherwise.
  */
-bool __sb_concat_impl(StringData *out, const char *buff1, size_t buff_len1, const char *buff2, size_t buff_len2);
-
+bool __sb_concat_impl(String *out, const char *buff1, size_t buff_len1, const char *buff2, size_t buff_len2);
 
  /**
- * @brief Function concatenates 2 strings into a mutable string
+ * @brief Function concatenates 2 raw strings into a mutable string
  * 
- * @param out[out]: mutable srting @see StringBuffer
+ * @param out[out]: mutable srting @see StringMut
  * @param buff1[in]: raw string to concatenate
  * @param buff_len1[in]: length of 1st raw string
  * @param buff2[in]: raw string to concatenate
@@ -409,5 +437,20 @@ bool __sb_concat_impl(StringData *out, const char *buff1, size_t buff_len1, cons
  * 
  * @returns true if concatenation was succesful, false otherwise.
  */
-bool __sb_concat_mut_impl(StringBuffer *out, const char *buff1, size_t buff_len1, const char *buff2, size_t buff_len2);
+bool __sb_concat_mut_impl(StringMut *out, const char *buff1, size_t buff_len1, const char *buff2, size_t buff_len2);
+
+/**
+ * @brief Funcion prints a raw string
+ * 
+ * @param buff: raw string to print
+ * @param buff_len: length of raw string
+ * 
+ * @note Function should not be used @see sb_print
+ * 
+ * @warning Function only supports printng strings whose length is < INT32_MAX
+ */
+static inline void __sb_print_impl(const char *buff, size_t buff_len) {
+	assert(buff_len < INT32_MAX);
+	printf("%.*s\n",(int32_t)buff_len, buff);
+}
 #endif

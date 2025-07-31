@@ -12,7 +12,7 @@ int test_suit_##suit_name##_test_case_##test_name(void)
 
 #define TEST_MEM_CHECK(func,...)                            \
 if (func(__VA_ARGS__) == 0) {                               \
-    printf("function %s failed to alloc memory", #func);    \
+    printf("function %s failed to alloc memory\n", #func);  \
     TEST_MEM_FAIL                                           \
 }                                                           
 

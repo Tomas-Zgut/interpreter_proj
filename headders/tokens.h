@@ -22,19 +22,14 @@ typedef enum {
 	TF,
 } frame_type;
 
-typedef StringData string_t;
-
-typedef uint64_t integer_t;
-
 typedef struct {
-	char *name;
-	uint64_t name_len;
+	String var_name;
 	frame_type var_frame;
 } variable_t;
 
 typedef union {
-	const StringData *string_val;
-	integer_t int_val;
+	String string_val;
+	uint64_t int_val;
 	variable_t var_data;
 	opcode_type ins_opcode;
 } token_value_t;
