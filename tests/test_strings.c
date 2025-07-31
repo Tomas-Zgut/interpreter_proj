@@ -11,6 +11,7 @@ CREATE_TEST(string_view_tests,view_from_empty_string1) {
     TEST_ASSERT_EQ(sb_length(&view),0,"Length of an empty view should be 0!")
     TEST_ASSERT_EQ(memcmp(view.data,buff.data,sb_length(&view)),0,"The data in empty strings should be the same!")
 
+    sb_free(&buff);
     TEST_SUCCES
 }
 
@@ -26,7 +27,8 @@ CREATE_TEST(string_view_tests,view_from_empty_string2) {
     TEST_ASSERT_EQ(sb_length(&view),0,"Length of an empty view should be 0!")
 
     TEST_ASSERT_EQ(memcmp(view.data,dataBuff.data,sb_length(&view)),0,"The data in empty strings should be the same!")
-
+    sb_free(&buff);
+    sb_free(&dataBuff);
     TEST_SUCCES
 }
 
@@ -39,7 +41,7 @@ CREATE_TEST(string_view_tests,view_from_empty_string3) {
 
     TEST_ASSERT_EQ(sb_length(&view),0,"Length of an empty view should be 0!")
     TEST_ASSERT_EQ(memcmp(view.data,buff.data,sb_length(&view)),0,"The data in empty strings should be the same!")
-
+    sb_free(&buff);
     TEST_SUCCES
 }
 
@@ -62,7 +64,7 @@ CREATE_TEST(string_view_tests, view_from_string1) {
     const StringView view_string = sb_get_substring(&buff,10,6);
     TEST_ASSERT_EQ(sb_length(&view_string), 6,"length of a substring should be correct!")
     TEST_ASSERT_EQ(memcmp(view_string.data,"string",sb_length(&view_string)),0,"Substring should equal the source!")
-
+    sb_free(&buff);
     TEST_SUCCES   
 }
 
@@ -89,7 +91,7 @@ CREATE_TEST(string_view_tests, view_from_string2) {
     const StringView view_string = sb_get_substring(&buff,10,LIT_LENGTH("string"));
     TEST_ASSERT_EQ(sb_length(&view_string), LIT_LENGTH("string"),"length of a substring should be correct!")
     TEST_ASSERT_EQ(memcmp(view_string.data,"string",sb_length(&view_string)),0,"Substring should equal the source!")
-
+    sb_free(&buff);
     TEST_SUCCES   
 }
 
@@ -102,11 +104,9 @@ CREATE_TEST(string_append_tests,append_char_empty) {
 
     TEST_ASSERT_EQ(sb_length(&buff),1,"length of buffer should be 1!")
     TEST_ASSERT_EQ(memcmp(buff.data,"a",1),0,"appended buffer should match!")
+    sb_free(&buff);
     TEST_SUCCES
 }
-
-#define ASSERT_ARRAY(lit) _Static_assert(!__builtin_types_compatible_p(__typeof__(lit), __typeof__(&(lit)[0])),"Must be an array");
-#define ASSERT_CHAR_ARRAY(lit) _Static_assert(__builtin_types_compatible_p(__typeof__(lit[0]), const char ),"Must be char!"); 
 
 CREATE_TEST(string_append_tests,append_string_empty) {
     StringMut buff;
@@ -122,6 +122,7 @@ CREATE_TEST(string_append_tests,append_string_empty) {
 
     TEST_ASSERT_EQ(sb_length(&buff),LIT_LENGTH(lit),"lengths should match after appending!")
     TEST_ASSERT_EQ(memcmp(buff.data,append_buff.data,sb_length(&append_buff)),0,"appended buffer should match!")
-
+    sb_free(&buff);
+    sb_free(&append_buff);
     TEST_SUCCES
 }

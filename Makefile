@@ -26,10 +26,18 @@ TEST_DEP_OBJS := $(filter $(BUILD_DIR)/DynBuf.o, $(OBJS))
 GENERATOR_FILE := $(TEST_DIR)/gen_test_runner.py
 GENERATED_FILE := $(TEST_DIR)/test_runner.h
 
+
+VALGRIND_LOG_FILE := $(TEST_DIR)/valgrind_out.txt
+VALGRIND_OPTIONS := -s --leak-check=full --track-origins=yes --show-leak-kinds=all --log-file=$(VALGRIND_LOG_FILE) --error-exitcode=1
+
 all: $(TARGET) 
 
 test: $(GENERATED_FILE) $(BUILD_DIR)/$(TEST_TARGET)
-	$(BUILD_DIR)/$(TEST_TARGET)
+	@valgrind  $(VALGRIND_OPTIONS)  $(BUILD_DIR)/$(TEST_TARGET) || {\
+		echo "🔴 Valgrind reported memory issues! See $(VALGRIND_LOG_FILE) for full details."; \
+		tail -n 20 $(VALGRIND_LOG_FILE); \
+		exit 1;\
+	}
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -I. -o $@
@@ -53,5 +61,5 @@ bld_dir:
 .PHONY: all clean test
 
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET) $(TEST_DIR)/test_runner.h
+	rm -rf $(BUILD_DIR) $(TARGET) $(GENERATED_FILE) $(VALGRIND_LOG_FILE)
 #Fandím ti kocourku :3
