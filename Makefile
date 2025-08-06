@@ -5,6 +5,9 @@ ifeq ($(BUILD), debug)
     CFLAGS := -Wall -Wextra -g
 else ifeq ($(BUILD), release)
     CFLAGS := -Wall -Wextra -Werror -O3 -DNDEBUG
+else ifeq ($(BUILD),cov)
+	CFLAGS := -Wall -Wextra -g -fprofile-arcs -ftest-coverage
+	LDFLAGS := -fprofile-arcs -ftest-coverage
 else
     $(error Unknown build type: $(BUILD))
 endif
@@ -16,6 +19,7 @@ BUILD_DIR := build
 INCLUDE_DIR := headders
 TEST_DIR := tests
 SOURCE_DIR := src
+COV_DIR := coverage
 
 SRCS := $(wildcard $(SOURCE_DIR)/*.c)
 OBJS := $(patsubst $(SOURCE_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
@@ -39,17 +43,29 @@ test: $(GENERATED_FILE) $(BUILD_DIR)/$(TEST_TARGET)
 		exit 1;\
 	}
 
+cov_check:
+ifeq ($(BUILD),cov)
+	@echo "BUILD is cov continuing ..."
+else 
+	$(error "coverage target requires BUILD=cov. Current BUILD=$(BUILD)")
+endif
+
+coverage: cov_check clean cov_dir test
+	lcov --capture --directory $(BUILD_DIR) --output-file $(COV_DIR)/coverage.info
+	lcov --remove $(COV_DIR)/coverage.info '*/tests/*' -o $(COV_DIR)/coverage.filtered.info
+	genhtml $(COV_DIR)/coverage.info --output-directory $(COV_DIR)/coverage-html
+
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -I. -o $@
+	$(CC) $(CFLAGS) $(OBJS) -I. -o $@ 
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADDERS) bld_dir
-	$(CC) $(CFLAGS) -I. -c $< -o $@
+	$(CC) $(CFLAGS) -I. -c $< -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(TEST_DIR)/%.c $(HEADDERS) bld_dir
-	$(CC) -I. -c $< -o $@
+	$(CC) $(CFLAGS) -I. -c $< -o $@ 
 
 $(BUILD_DIR)/$(TEST_TARGET): $(TEST_OBJS) $(TEST_DEP_OBJS) $(HEADDERS)
-	$(CC) -I.  $(TEST_DEP_OBJS) $(TEST_OBJS) -o $@
+	$(CC) $(CFLAGS) -I. $(TEST_DEP_OBJS) $(TEST_OBJS) -o $@
 
 
 $(GENERATED_FILE): $(GENERATOR_FILE) $(TEST_SRCS)
@@ -58,8 +74,11 @@ $(GENERATED_FILE): $(GENERATOR_FILE) $(TEST_SRCS)
 bld_dir:
 	@mkdir -p $(BUILD_DIR)
 
+cov_dir:
+	@mkdir -p $(COV_DIR)
+
 .PHONY: all clean test
 
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET) $(GENERATED_FILE) $(VALGRIND_LOG_FILE)
+	rm -rf $(BUILD_DIR) $(TARGET) $(GENERATED_FILE) $(VALGRIND_LOG_FILE) $(COV_DIR)
 #Fandím ti kocourku :3
