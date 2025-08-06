@@ -53,7 +53,7 @@ endif
 coverage: cov_check clean cov_dir test
 	lcov --capture --directory $(BUILD_DIR) --output-file $(COV_DIR)/coverage.info
 	lcov --remove $(COV_DIR)/coverage.info '*/tests/*' -o $(COV_DIR)/coverage.filtered.info
-	genhtml $(COV_DIR)/coverage.info --output-directory $(COV_DIR)/coverage-html
+	genhtml $(COV_DIR)/coverage.filtered.info --output-directory $(COV_DIR)/coverage-html
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -I. -o $@ 
