@@ -1,9 +1,7 @@
 #!/usr/bin/python3
-import enum
 import os
 import re
 from collections import defaultdict
-from typing import Generator
 
 tests_type = defaultdict[str,list[str]]
 pattern = re.compile(r"\bCREATE_TEST\(\s*(\w+)\s*,\s*(\w+)\s*\)\s*\{")

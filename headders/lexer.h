@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 typedef struct {
-	StringBuffer current_line_buffer; // Dynamický buffer pro aktuální řádek
+	StringMut current_line_buffer; // Dynamický buffer pro aktuální řádek
 	size_t current_pos_in_line;		  // Aktuální pozice v current_line_bufferu
 	bool line_is_exhausted; // zda je aktuální řádek zpracován a je potřeba
 							// načíst nový

@@ -1,5 +1,17 @@
 CC := gcc
-CFLAGS :=  -Wall -Wextra -g 
+BUILD ?= debug
+
+ifeq ($(BUILD), debug)
+    CFLAGS := -Wall -Wextra -g
+else ifeq ($(BUILD), release)
+    CFLAGS := -Wall -Wextra -Werror -O3 -DNDEBUG
+else ifeq ($(BUILD),cov)
+	CFLAGS := -Wall -Wextra -g -fprofile-arcs -ftest-coverage
+	LDFLAGS := -fprofile-arcs -ftest-coverage
+else
+    $(error Unknown build type: $(BUILD))
+endif
+
 
 TARGET := ipp_interpret
 TEST_TARGET := run_tests
@@ -7,6 +19,7 @@ BUILD_DIR := build
 INCLUDE_DIR := headders
 TEST_DIR := tests
 SOURCE_DIR := src
+COV_DIR := coverage
 
 SRCS := $(wildcard $(SOURCE_DIR)/*.c)
 OBJS := $(patsubst $(SOURCE_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
@@ -17,16 +30,46 @@ TEST_DEP_OBJS := $(filter $(BUILD_DIR)/DynBuf.o, $(OBJS))
 GENERATOR_FILE := $(TEST_DIR)/gen_test_runner.py
 GENERATED_FILE := $(TEST_DIR)/test_runner.h
 
-all: $(TARGET) bld_dir
+
+VALGRIND_LOG_FILE := $(TEST_DIR)/valgrind_out.txt
+VALGRIND_OPTIONS := -s --leak-check=full --track-origins=yes --show-leak-kinds=all --log-file=$(VALGRIND_LOG_FILE) --error-exitcode=1
+
+all: $(TARGET) 
 
 test: $(GENERATED_FILE) $(BUILD_DIR)/$(TEST_TARGET)
-	$(BUILD_DIR)/$(TEST_TARGET)
+	@valgrind  $(VALGRIND_OPTIONS)  $(BUILD_DIR)/$(TEST_TARGET) || {\
+		echo "🔴 Valgrind reported memory issues! See $(VALGRIND_LOG_FILE) for full details."; \
+		tail -n 20 $(VALGRIND_LOG_FILE); \
+		exit 1;\
+	}
 
-$(TARGET): $(OBJS) bld_dir
-	$(CC) $(CFLAGS) $(OBJS) -I. -o $@
+cov_check:
+ifeq ($(BUILD),cov)
+	@echo "BUILD is cov continuing ..."
+else 
+	$(error "coverage target requires BUILD=cov. Current BUILD=$(BUILD)")
+endif
+
+coverage: cov_check clean cov_dir test
+	lcov --capture --directory $(BUILD_DIR) --output-file $(COV_DIR)/coverage.info
+	lcov --remove $(COV_DIR)/coverage.info '*/tests/*' -o $(COV_DIR)/coverage.filtered.info
+	genhtml $(COV_DIR)/coverage.filtered.info --output-directory $(COV_DIR)/coverage-html
+
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -I. -o $@ 
 
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c $(HEADDERS) bld_dir
-	$(CC) $(CFLAGS) -I. -c $< -o $@
+	$(CC) $(CFLAGS) -I. -c $< -o $@ $(LDFLAGS)
+
+$(BUILD_DIR)/%.o: $(TEST_DIR)/%.c $(HEADDERS) bld_dir
+	$(CC) $(CFLAGS) -I. -c $< -o $@ 
+
+$(BUILD_DIR)/$(TEST_TARGET): $(TEST_OBJS) $(TEST_DEP_OBJS) $(HEADDERS)
+	$(CC) $(CFLAGS) -I. $(TEST_DEP_OBJS) $(TEST_OBJS) -o $@
+
+
+$(GENERATED_FILE): $(GENERATOR_FILE) $(TEST_SRCS)
+	./$(GENERATOR_FILE)
 
 $(BUILD_DIR)/%.o: $(TEST_DIR)/%.c $(HEADDERS) bld_dir
 	$(CC) -I. -c $< -o $@
@@ -41,8 +84,11 @@ $(GENERATED_FILE): $(GENERATOR_FILE) $(TEST_SRCS)
 bld_dir:
 	@mkdir -p $(BUILD_DIR)
 
+cov_dir:
+	@mkdir -p $(COV_DIR)
+
 .PHONY: all clean test
 
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET) $(TEST_DIR)/test_runner.h
+	rm -rf $(BUILD_DIR) $(TARGET) $(GENERATED_FILE) $(VALGRIND_LOG_FILE) $(COV_DIR)
 #Fandím ti kocourku :3

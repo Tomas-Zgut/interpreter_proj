@@ -56,4 +56,5 @@ int main() {
     printf("Number of suits ran: %d, number of tests ran: %d\n",num_suites,(int)num_tests_global);
     printf("Results: passed: %d, failed: %d, err: %d, pass rate: %.2f\n", tests_pass_global ,tests_fail_global, tests_err_global, tests_pass_global / num_tests_global);
     printf("Overall: %s\n", tests_fail_global == 0 ? "\033[1;32mPASSED\033[0m": "\033[1;31mFAILED\033[0m");
+    return tests_fail_global;
 }

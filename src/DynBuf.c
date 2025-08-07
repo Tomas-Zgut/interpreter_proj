@@ -6,7 +6,7 @@
 
 #define SB_DEFAULT_INITIAL_CAPACITY 16
 
-bool sb_init(StringBuffer *buf, size_t initial_capacity) {
+bool sb_init(StringMut *buf, size_t initial_capacity) {
 	if (initial_capacity == 0) {
 		initial_capacity = SB_DEFAULT_INITIAL_CAPACITY;
 	}
@@ -23,7 +23,7 @@ bool sb_init(StringBuffer *buf, size_t initial_capacity) {
 	return true;
 }
 
-bool sb_append_char(StringBuffer *buf, char c) {
+bool sb_append_char(StringMut *buf, char c) {
 	if (buf->length + 1 >= buf->capacity) {
 		size_t new_capacity = buf->capacity * 2;
 
@@ -41,9 +41,9 @@ bool sb_append_char(StringBuffer *buf, char c) {
 	return true;
 }
 
-void sb_reset(StringBuffer *buf) { buf->length = 0; }
+void sb_reset(StringMut *buf) { buf->length = 0; }
 
-bool __sb_copy_mut_impl(const char *buf, size_t buff_len, StringBuffer *out) {
+bool __sb_copy_mut_impl(StringMut *out, const char *buf, size_t buff_len) {
 	assert(out != NULL);
 	assert(buf != NULL);
 
@@ -55,16 +55,17 @@ bool __sb_copy_mut_impl(const char *buf, size_t buff_len, StringBuffer *out) {
 	out->length = buff_len;
 	return true;
 }
-
 StringView __sb_get_substring_impl(const char *buff, size_t buff_len, size_t offset, size_t len) {
 	assert(offset <= buff_len);
 	assert(len <= buff_len - offset);
 	assert(buff != NULL);
-
+	#ifdef NDEBUG 
+	(void)buff_len; //to removew warings from release buidls
+	#endif
 	return (StringView){buff + offset, len};
 }
 
-bool __sb_copy_impl(const char *buff, size_t buff_len, StringData *out) {
+bool __sb_copy_impl(String	*out, const char *buff, size_t buff_len) {
 	assert(buff != NULL);
 	assert(out != NULL);
 
@@ -83,34 +84,39 @@ bool __sb_copy_impl(const char *buff, size_t buff_len, StringData *out) {
 }
 
 
-bool __sb_append_string_impl(StringBuffer *out, const char *buff, size_t buff_len) {
+bool __sb_append_string_impl(StringMut *out, const char *buff, size_t buff_len) {
 	assert(out != NULL);
 	assert(buff != NULL);
 
-	if (SIZE_MAX - buff_len > out->length) {
+	if (SIZE_MAX - buff_len < out->length) {
 		return false;
 	}
 
-	if (out->capacity < out->length + buff_len) {
-		char * new_data = realloc(out->data,out->capacity*2);
+	size_t total_cap_required = out->length + buff_len;
+	if (out->capacity < total_cap_required) {
+		size_t new_cap = total_cap_required + total_cap_required/2; //1.5 grpwth strategy
+		
+		char * new_data = realloc(out->data,new_cap);
+
 		if (new_data == NULL) {
 			return false;
 		}
-		out->capacity *= 2;
+
+		out->capacity = new_cap;
 		out->data = new_data;
 	}
 
-	memcpy(out->data + out->length + 1, buff, buff_len);
+	memcpy(out->data + out->length, buff, buff_len);
 	out->length += buff_len;
 	return true;
 }
 
-bool __sb_concat_mut_impl(StringBuffer *out, const char *buff1, size_t buff_len1, const char *buff2, size_t buff_len2) {
+bool __sb_concat_mut_impl(StringMut *out, const char *buff1, size_t buff_len1, const char *buff2, size_t buff_len2) {
 	assert(out != NULL);
 	assert(buff1 != NULL);
 	assert(buff2 != NULL);
 
-	if (SIZE_MAX - buff_len1 > buff_len2) {
+	if (SIZE_MAX - buff_len1 < buff_len2) {
 		out->data = NULL; //safe to free in case of overflow
 		return false;
 	}
@@ -119,17 +125,18 @@ bool __sb_concat_mut_impl(StringBuffer *out, const char *buff1, size_t buff_len1
 		return false;
 	}
 
+	out->length = buff_len1 + buff_len2;
 	memcpy(out->data,buff1,buff_len1);
-	memcpy(out->data + buff_len1 + 1, buff2, buff_len2);
+	memcpy(out->data + buff_len1, buff2, buff_len2);
 	return true;
 }
 
-bool __sb_concat_impl(StringData *out, const char *buff1, size_t buff_len1, const char *buff2, size_t buff_len2) {
+bool __sb_concat_impl(String *out, const char *buff1, size_t buff_len1, const char *buff2, size_t buff_len2) {
 	assert(out != NULL);
 	assert(buff1 != NULL);
 	assert(buff2 != NULL);
 
-	if (SIZE_MAX - buff_len1 > buff_len2) {
+	if (SIZE_MAX - buff_len1 < buff_len2) {
 		out->data = NULL; //safe to free in case of overflow
 		return false;
 	}
@@ -142,21 +149,21 @@ bool __sb_concat_impl(StringData *out, const char *buff1, size_t buff_len1, cons
 
 	out->length = buff_len1 + buff_len2;
 	memcpy(data,buff1,buff_len1);
-	memcpy(data + buff_len1 + 1, buff2, buff_len2);
+	memcpy(data + buff_len1, buff2, buff_len2);
 	out->data = data;
 	return true;
 
 }
 
 
-void __sb_free(StringBuffer *buf) {
+void __sb_free(StringMut *buf) {
 	assert(buf != NULL);
 	free(buf->data);
 	buf->data = NULL;
 	buf->length = 0;
 	buf->capacity = 0;
 }
-void __sd_free(StringData *buff) {
+void __sd_free(String *buff) {
 	assert(buff != NULL);
 	free((void *)buff->data);
 	buff->data = NULL;

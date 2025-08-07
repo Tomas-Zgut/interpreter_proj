@@ -12,7 +12,7 @@ int test_suit_##suit_name##_test_case_##test_name(void)
 
 #define TEST_MEM_CHECK(func,...)                            \
 if (func(__VA_ARGS__) == 0) {                               \
-    printf("function %s failed to alloc memory", #func);    \
+    printf("function %s failed to alloc memory\n", #func);  \
     TEST_MEM_FAIL                                           \
 }                                                           
 
@@ -36,4 +36,19 @@ if ((expr1) == (expr2)) {                           \
 }
 
 #define LIT_LENGTH(x) sizeof(x)-1
+
+#define BUFF_FROM_LIT(buff,lit)             \
+    memcpy((void *)buff.data,lit,LIT_LENGTH(lit));  \
+    buff.length = LIT_LENGTH(lit);
+
+#define BUFF_FROM_LIT_ALLOC(buff,lit)       \
+    buff.data = malloc(LIT_LENGTH(lit));    \
+    if(!append_buff.data) {                 \
+        TEST_MEM_FAIL                       \
+    }                                       \
+    BUFF_FROM_LIT(append_buff,lit)
+    
+#define VIEW_FROM_LIT(lit)  \
+(const StringView) {.data = lit, .length = LIT_LENGTH(lit)}
+
 #endif
