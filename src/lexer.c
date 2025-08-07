@@ -65,7 +65,7 @@ static ins_data_t instruction_map[] = {
 };
 
 static ins_data_indexes ins_index_map[] = {
-	{-1, -1}, {-1, -1}, {0, 4},	  {4, 9},	{9, 17},  {17, 21},
+	{-1, -1}, {-1, -1}, {0, 4},	 {4, 9}, {9, 17}, {17, 21},
 	{21, 26}, {26, 29}, {29, 31}, {31, 34}, {-1, -1}, {35, 36},
 };
 
@@ -87,7 +87,12 @@ bool lexer_read_next_line(LexerContext *ctx) {
 
 	while ((c = fgetc(ctx->input_stream)) != EOF) {
 		if (c == '\n') {
-			sb_append_char(&ctx->current_line_buffer, (char)c);
+			// Do bufferu přidáme '\n', pro zpracování dalších funkcí, ale pozice -> posune
+			if (!sb_append_char(&ctx->current_line_buffer, (char)c)) {
+				fprintf(stderr, "Chyba: Nedostatek paměti při čtení řádku %u.\n",
+						ctx->line_number);
+				return false;
+			}
 			line_read = true;
 			break;
 		}
@@ -159,7 +164,6 @@ token_t *get_next_token(LexerContext *ctx) {
 			ctx->line_is_exhausted = true;
 			return get_next_token(ctx);
 		}
-
 		break;
 	}
 
@@ -174,9 +178,10 @@ token_t *get_next_token(LexerContext *ctx) {
 		return NULL;
 	}
 	new_token->type = TOKEN_UNKNOWN;
-	new_token->value.int_val = 0;
+	// inicializace unionu pro bezpečnou manipulaci (doporučeno by ai xD)
+	memset(&new_token->value, 0, sizeof(token_value_t));
 
-	// logika pro určení délky aktuálního tokenu + typu
+	//určení délky
 	size_t start_token_pos = ctx->current_pos_in_line;
 	size_t current_token_len = 0;
 
@@ -190,54 +195,48 @@ token_t *get_next_token(LexerContext *ctx) {
 		current_token_len++;
 	}
 
-	// StringView pro právě nalezený segment textu
+	// StringView pro nalezený segment textu
 	const StringView token_view = sb_get_substring(
 		&ctx->current_line_buffer, start_token_pos, current_token_len);
 
-	// Basically pseudokódy na ty is_(něco) funkce a musí být doplněny
-
 	if (is_instruction(&token_view)) {
-		new_token->type = TOKEN_INSTRUCTION;
-		if (!lex_instruction(&token_view, new_token)) {
-			fprintf(stderr, "Chyba: Neznámá/nevalidní instrukce na řádku %u.\n",
+		if (lex_instruction(&token_view, new_token)) {
+			new_token->type = TOKEN_INSTRUCTION;
+		} else {
+			fprintf(stderr, "Chyba: Nevalidní instrukce na řádku %u.\n",
 					ctx->line_number);
 			new_token->type = TOKEN_UNKNOWN;
-			// Možná uvolnit new_token->value.ins_opcode, pokud by byla nějaká
-			// alokace uvnitř lex_instruction
 		}
 	} else if (is_variable(&token_view)) {
-		new_token->type = TOKEN_VARIABLE;
-		if (!lex_variable(&token_view, new_token)) {
+		if (lex_variable(&token_view, new_token)) {
+			new_token->type = TOKEN_VARIABLE;
+		} else {
 			fprintf(stderr, "Chyba: Nevalidní proměnná na řádku %u.\n",
 					ctx->line_number);
 			new_token->type = TOKEN_UNKNOWN;
 		}
 	} else if (is_label(&token_view)) {
-		new_token->type = TOKEN_LABEL;
-		if (!lex_label(&token_view, new_token)) {
+		if (lex_label(&token_view, new_token)) {
+			new_token->type = TOKEN_LABEL;
+		} else {
 			fprintf(stderr, "Chyba: Nevalidní návěští na řádku %u.\n",
 					ctx->line_number);
 			new_token->type = TOKEN_UNKNOWN;
 		}
-	}
-
-	else if (is_literal(&token_view)) {
-		if (!lex_literal(&token_view, new_token)) {
+	} else if (is_literal(&token_view)) {
+		if (lex_literal(&token_view, new_token)) {
+		} else {
 			fprintf(stderr, "Chyba: Nevalidní literál na řádku %u.\n",
 					ctx->line_number);
 			new_token->type = TOKEN_UNKNOWN;
 		}
-	}
-
-	// Doplnit další else if pro další typy tokenů, např. typy (int, string,
-	// bool) Pokud nic z toho, pak je to neznámý token
-	else {
-		fprintf(stderr, "Chyba: Neznámý token '%s' na řádku %u.\n",
-				token_view.data, ctx->line_number);
+	} else {
+		fprintf(stderr, "Chyba: Neznámý token '%.*s' na řádku %u.\n",
+				(int)token_view.length, token_view.data, ctx->line_number);
 		new_token->type = TOKEN_UNKNOWN;
 	}
-	ctx->current_pos_in_line += current_token_len;
 
+	ctx->current_pos_in_line += current_token_len;
 	return new_token;
 }
 
@@ -255,7 +254,7 @@ int find_sep(const StringView *buff, char sep) {
 	const char *buff_data = buff->data;
 	int buff_idx = 0;
 	for (; (size_t)buff_idx < buff->length; buff_idx++) {
-		if (buff_data[buff_idx] != sep) {
+		if (buff_data[buff_idx] == sep) {
 			return buff_idx;
 		}
 	}
@@ -263,22 +262,22 @@ int find_sep(const StringView *buff, char sep) {
 }
 
 token_type lex_lit_prefix(const StringView *buff) {
-	if (buff->length == INT_LIT_SEP_OFFSET &&
+	if (buff->length == strlen(INT_PREFIX) &&
 		!memcmp(buff->data, INT_PREFIX, buff->length)) {
 		return TOKEN_INT;
 	}
 
-	if (buff->length == NIL_LIT_SEP_OFFSET &&
+	if (buff->length == strlen(NIL_PREFIX) &&
 		!memcmp(buff->data, NIL_PREFIX, buff->length)) {
 		return TOKEN_NIL;
 	}
 
-	if (buff->length == BOOL_LIT_SEP_OFFSET &&
+	if (buff->length == strlen(BOOL_PREFIX) &&
 		!memcmp(buff->data, BOOL_PREFIX, buff->length)) {
 		return TOKEN_BOOL;
 	}
 
-	if (buff->length == STRING_LIT_SEP_OFFSET &&
+	if (buff->length == strlen(STRING_PREFIX) &&
 		!memcmp(buff->data, STRING_PREFIX, buff->length)) {
 		return TOKEN_STRING;
 	}
@@ -316,7 +315,6 @@ bool is_allowed_char(char input) {
 	case '!':
 	case '?':
 		return true;
-
 	default:
 		return false;
 	}
@@ -324,12 +322,14 @@ bool is_allowed_char(char input) {
 
 bool is_identifier(const StringView *buff) {
 	const char *buff_data = buff->data;
-	if (!isalpha(buff_data[0]) || !is_allowed_char(buff_data[0])) {
+	//indentifikator musí být povolené písmeno nebo znak
+	if (!isalpha(buff_data[0]) && !is_allowed_char(buff_data[0])) {
 		return false;
 	}
 
 	for (size_t buff_idx = 1; buff_idx < buff->length; buff_idx++) {
-		if (!isalnum(buff_data[buff_idx]) ||
+		//zbytek může být písmeno, číslo, znak
+		if (!isalnum(buff_data[buff_idx]) &&
 			!is_allowed_char(buff_data[buff_idx])) {
 			return false;
 		}
@@ -340,32 +340,38 @@ bool is_identifier(const StringView *buff) {
 bool is_literal(const StringView *buff) {
 	int sep_idx = find_sep(buff, '@');
 
-	if (sep_idx == -1 || sep_idx < INT_LIT_SEP_OFFSET ||
-		sep_idx > STRING_LIT_SEP_OFFSET) {
+	if (sep_idx <= 0) {
 		return false;
 	}
-
-	const StringView lit_prefix = sb_get_substring(buff, 0, sep_idx - 1);
+	
+	const StringView lit_prefix = sb_get_substring(buff, 0, sep_idx);
 	return lex_lit_prefix(&lit_prefix) != TOKEN_UNKNOWN;
 }
 
 bool is_variable(const StringView *buff) {
-	if (buff->data[VAR_FRAME_SEP_OFFSET] != '@') {
+	int sep_idx = find_sep(buff, '@');
+
+	if (sep_idx != 2) {
 		return false;
 	}
-
+	
 	const StringView prefix = sb_get_substring(buff, 0, 2);
-
 	if (lex_var_prefix(&prefix) == TOKEN_UNKNOWN) {
 		return false;
 	}
-
-	const StringView postfix = sb_get_view(buff, VAR_FRAME_SEP_OFFSET);
-
+	
+	const StringView postfix = sb_get_view(buff, VAR_FRAME_SEP_OFFSET + 1);
 	return is_identifier(&postfix);
 }
 
-bool is_label(const StringView *buff) { return is_identifier(buff); }
+bool is_label(const StringView *buff) {
+	if (buff->length < 1 || buff->data[buff->length - 1] != ':') {
+		return false;
+	}
+	
+	const StringView label_name = sb_get_substring(buff, 0, buff->length - 1);
+	return is_identifier(&label_name);
+}
 
 ins_data_indexes get_instruction_indexes(const StringView *buff) {
 	if (buff->length > 11) {
@@ -393,4 +399,121 @@ opcode_type lookup_insturction(const StringView *buff) {
 
 bool is_instruction(const StringView *buff) {
 	return lookup_insturction(buff) != INS_UNKNOWN;
+}
+
+/* @todo implement */
+bool lex_variable(const StringView *buff, token_t *token) {
+	assert(is_variable(buff)); // Předpokládáme, že funkce is_variable již
+							   // proběhla
+	
+	// Nastavíme typ tokenu
+	token->type = TOKEN_VARIABLE;
+	
+	// Extrakce rámce
+	char frame_char = buff->data[0];
+	switch (frame_char) {
+		case 'G': token->value.var_data.var_frame = GF; break;
+		case 'L': token->value.var_data.var_frame = LF; break;
+		case 'T': token->value.var_data.var_frame = TF; break;
+		default: return false; // Nemělo by nastat, ale pro jistotu
+	}
+	
+	// Extrakce názvu proměnné
+	const StringView var_name_view = sb_get_view(buff, VAR_FRAME_SEP_OFFSET + 1);
+	
+	// Kopírování názvu do tokenu
+	if (!sb_copy(&token->value.var_data.var_name, &var_name_view)) {
+		// handle malloc failure
+		return false;
+	}
+	
+	return true;
+}
+
+/* @todo implement */
+bool lex_literal(const StringView *buff, token_t *token) {
+	assert(is_literal(buff)); // Předpokládáme, že funkce is_literal již proběhla
+
+	int sep_idx = find_sep(buff, '@');
+	const StringView lit_prefix = sb_get_substring(buff, 0, sep_idx);
+	const StringView lit_value_view = sb_get_view(buff, sep_idx + 1);
+	
+	token->type = lex_lit_prefix(&lit_prefix);
+	
+	switch (token->type) {
+		case TOKEN_INT:
+			// Převedení na int
+			if (lit_value_view.length > 0) {
+				char* endptr;
+				token->value.int_val = strtoull(lit_value_view.data, &endptr, 10);
+				if (*endptr != '\0') { // Kontrola, zda se převedl celý řetězec
+					token->type = TOKEN_UNKNOWN;
+					return false;
+				}
+			} else {
+				token->type = TOKEN_UNKNOWN;
+				return false;
+			}
+			break;
+		case TOKEN_STRING:
+			if (!sb_copy(&token->value.string_val, &lit_value_view)) {
+				token->type = TOKEN_UNKNOWN;
+				return false;
+			}
+			break;
+		case TOKEN_BOOL:
+			if (lit_value_view.length == 4 && !memcmp(lit_value_view.data, "true", 4)) {
+				token->value.int_val = 1;
+			} else if (lit_value_view.length == 5 && !memcmp(lit_value_view.data, "false", 5)) {
+				token->value.int_val = 0;
+			} else {
+				token->type = TOKEN_UNKNOWN;
+				return false;
+			}
+			break;
+		case TOKEN_NIL:
+			token->value.int_val = 0; // nebo jiná reprezentace NIL
+			break;
+		default:
+			return false;
+	}
+	
+	return true;
+}
+
+/* @todo implement */
+bool lex_instruction(const StringView *buff, token_t *token) {
+	assert(is_instruction(buff));
+	
+	token->value.ins_opcode = lookup_insturction(buff);
+	token->type = TOKEN_INSTRUCTION;
+	
+	if (token->value.ins_opcode == INS_UNKNOWN) {
+		return false;
+	}
+	
+	return true;
+}
+
+/* @todo implement */
+bool lex_label(const StringView *buff, token_t *token) {
+	assert(is_label(buff));
+	
+	token->type = TOKEN_LABEL;
+	
+	const StringView label_name = sb_get_substring(buff, 0, buff->length - 1);
+	
+	if (!sb_copy(&token->value.string_val, &label_name)) {
+		return false;
+	}
+	
+	return true;
+}
+
+/* @brief function to deal with tokens (might not be used) */
+void lex_commnet(const StringView *buff) {
+	// Tato funkce je v tuto chvíli zbytečná, protože komentáře se přeskočí.
+	// Pokud by byla potřeba, mohla by se sem přidat nějaká logika
+	// pro zpracování obsahu komentářů.
+	(void)buff; // Potlačení warningu
 }
