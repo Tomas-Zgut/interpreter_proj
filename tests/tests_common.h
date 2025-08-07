@@ -43,10 +43,10 @@ if ((expr1) == (expr2)) {                           \
 
 #define BUFF_FROM_LIT_ALLOC(buff,lit)       \
     buff.data = malloc(LIT_LENGTH(lit));    \
-    if(!append_buff.data) {                 \
+    if(!buff.data) {                        \
         TEST_MEM_FAIL                       \
     }                                       \
-    BUFF_FROM_LIT(append_buff,lit)
+    BUFF_FROM_LIT(buff,lit)
     
 #define VIEW_FROM_LIT(lit)  \
 (const StringView) {.data = lit, .length = LIT_LENGTH(lit)}

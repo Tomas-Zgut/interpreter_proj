@@ -12,36 +12,31 @@ CREATE_TEST(string_view_tests,view_from_empty_string1) {
     TEST_ASSERT_EQ(memcmp(view.data,buff.data,sb_length(&view)),0,"The data in empty strings should be the same!")
 
     sb_free(&buff);
+
     TEST_SUCCES
 }
 
 CREATE_TEST(string_view_tests,view_from_empty_string2) {
-    StringMut buff;
-    TEST_MEM_CHECK(sb_init,&buff,0);
+    String buff;
+    BUFF_FROM_LIT_ALLOC(buff,"")
 
-    String dataBuff;
-    TEST_MEM_CHECK(sb_copy,&dataBuff,&buff)
-
-    const StringView view = sb_get_view(&dataBuff,0);
+    const StringView view = sb_get_view(&buff,0);
 
     TEST_ASSERT_EQ(sb_length(&view),0,"Length of an empty view should be 0!")
+    TEST_ASSERT_EQ(memcmp(view.data,buff.data,sb_length(&view)),0,"The data in empty strings should be the same!")
 
-    TEST_ASSERT_EQ(memcmp(view.data,dataBuff.data,sb_length(&view)),0,"The data in empty strings should be the same!")
     sb_free(&buff);
-    sb_free(&dataBuff);
+
     TEST_SUCCES
 }
 
 CREATE_TEST(string_view_tests,view_from_empty_string3) {
-    StringMut buff;
-    TEST_MEM_CHECK(sb_init,&buff,0);
-
-    const StringView test_view = sb_get_view(&buff,0);
+    const StringView test_view = VIEW_FROM_LIT("");
     const StringView view = sb_get_view(&test_view,0);
 
     TEST_ASSERT_EQ(sb_length(&view),0,"Length of an empty view should be 0!")
-    TEST_ASSERT_EQ(memcmp(view.data,buff.data,sb_length(&view)),0,"The data in empty strings should be the same!")
-    sb_free(&buff);
+    TEST_ASSERT_EQ(memcmp(view.data,test_view.data,sb_length(&view)),0,"The data in empty strings should be the same!")
+
     TEST_SUCCES
 }
 
@@ -64,50 +59,44 @@ CREATE_TEST(string_view_tests, view_from_string1) {
     const StringView view_string = sb_get_substring(&buff,10,6);
     TEST_ASSERT_EQ(sb_length(&view_string), 6,"length of a substring should be correct!")
     TEST_ASSERT_EQ(memcmp(view_string.data,"string",sb_length(&view_string)),0,"Substring should equal the source!")
+
     sb_free(&buff);
+
     TEST_SUCCES   
 }
 
 
 
 CREATE_TEST(string_view_tests, view_from_string2) {
-    StringMut buff;
+    String buff;
     const char str_lit[] = "this is a string!";
-    TEST_MEM_CHECK(sb_init,&buff,LIT_LENGTH(str_lit))
-    BUFF_FROM_LIT(buff,str_lit)
-
-    String dataBuff;
-    TEST_MEM_CHECK(sb_copy,&dataBuff,&buff)
+    BUFF_FROM_LIT_ALLOC(buff,str_lit)
 
     // string start
-    const StringView view_this = sb_get_substring(&dataBuff,0,LIT_LENGTH("this"));
+    const StringView view_this = sb_get_substring(&buff,0,LIT_LENGTH("this"));
     TEST_ASSERT_EQ(sb_length(&view_this), LIT_LENGTH("this"),"length of a substring should be correct!")
     TEST_ASSERT_EQ(memcmp(view_this.data,"this",sb_length(&view_this)),0,"Substring should equal the source!")
 
     // srting middle
-    const StringView view_is = sb_get_substring(&dataBuff,5,LIT_LENGTH("is"));
+    const StringView view_is = sb_get_substring(&buff,5,LIT_LENGTH("is"));
     TEST_ASSERT_EQ(sb_length(&view_is), LIT_LENGTH("is"),"length of a substring should be correct!")
     TEST_ASSERT_EQ(memcmp(view_is.data,"is",sb_length(&view_is)),0,"Substring should equal the source!")
 
     //string end
-    const StringView view_string = sb_get_substring(&dataBuff,10,LIT_LENGTH("string"));
+    const StringView view_string = sb_get_substring(&buff,10,LIT_LENGTH("string"));
     TEST_ASSERT_EQ(sb_length(&view_string), LIT_LENGTH("string"),"length of a substring should be correct!")
     TEST_ASSERT_EQ(memcmp(view_string.data,"string",sb_length(&view_string)),0,"Substring should equal the source!")
 
     sb_free(&buff);
-    sb_free(&dataBuff);
+
     TEST_SUCCES   
 }
 
 
 
 CREATE_TEST(string_view_tests, view_from_string3) {
-    StringMut buff;
     const char str_lit[] = "this is a string!";
-    TEST_MEM_CHECK(sb_init,&buff,LIT_LENGTH(str_lit))
-    BUFF_FROM_LIT(buff,str_lit)
-
-    const StringView view = sb_get_view(&buff,0);
+    const StringView view = VIEW_FROM_LIT(str_lit);
 
     // string start
     const StringView view_this = sb_get_substring(&view,0,LIT_LENGTH("this"));
@@ -124,7 +113,6 @@ CREATE_TEST(string_view_tests, view_from_string3) {
     TEST_ASSERT_EQ(sb_length(&view_string), LIT_LENGTH("string"),"length of a substring should be correct!")
     TEST_ASSERT_EQ(memcmp(view_string.data,"string",sb_length(&view_string)),0,"Substring should equal the source!")
 
-    sb_free(&buff);
     TEST_SUCCES   
 }
 
@@ -136,7 +124,9 @@ CREATE_TEST(string_append_tests,append_char_empty) {
 
     TEST_ASSERT_EQ(sb_length(&buff),1,"length of buffer should be 1!")
     TEST_ASSERT_EQ(memcmp(buff.data,"a",1),0,"appended buffer should match!")
+
     sb_free(&buff);
+
     TEST_SUCCES
 }
 
@@ -153,8 +143,10 @@ CREATE_TEST(string_append_tests,append_string_empty1) {
 
     TEST_ASSERT_EQ(sb_length(&buff),LIT_LENGTH(lit),"lengths should match after appending!")
     TEST_ASSERT_EQ(memcmp(buff.data,append_buff.data,sb_length(&append_buff)),0,"appended buffer should match!")
+
     sb_free(&buff);
     sb_free(&append_buff);
+
     TEST_SUCCES
 }
 
@@ -175,6 +167,7 @@ CREATE_TEST(string_append_tests,append_string_empty2) {
 
     sb_free(&buff);
     sb_free(&append_buff);
+
     TEST_SUCCES
 }
 
@@ -278,5 +271,341 @@ CREATE_TEST(string_append_tests,apend_char_full) {
     TEST_ASSERT_EQ(buff.capacity,8,"Capacity should match!")
 
     sb_free(&buff);
+    TEST_SUCCES
+}
+
+
+
+CREATE_TEST(string_concat_tests,concat_mut1) {
+    StringMut out;
+    StringMut buff1;
+    StringMut buff2;
+    const char lit1[] = "concat ";
+    const char lit2[] = "strings";
+
+    TEST_MEM_CHECK(sb_init,&buff1,LIT_LENGTH(lit1));
+    TEST_MEM_CHECK(sb_init,&buff2,LIT_LENGTH(lit2));
+    BUFF_FROM_LIT(buff1,lit1)
+    BUFF_FROM_LIT(buff2,lit2)
+
+    TEST_MEM_CHECK(sb_concat_mut,&out,&buff1,&buff2)
+
+    TEST_ASSERT_EQ(sb_length(&out),LIT_LENGTH(lit1)+LIT_LENGTH(lit2),"lengths should equal after concatenation")
+    TEST_ASSERT_EQ(memcmp(out.data,"concat strings",sb_length(&out)),0,"concatenation output should be correct!")
+    TEST_ASSERT(sb_length(&out) == out.capacity,"capacity should be the same as length!")
+
+    sb_free(&out);
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(string_concat_tests,concat_mut2) {
+    StringMut out;
+    String buff1;
+    String buff2;
+    const char lit1[] = "concat ";
+    const char lit2[] = "strings";
+
+    BUFF_FROM_LIT_ALLOC(buff1,lit1)
+    BUFF_FROM_LIT_ALLOC(buff2,lit2)
+
+    TEST_MEM_CHECK(sb_concat_mut,&out,&buff1,&buff2)
+
+    TEST_ASSERT_EQ(sb_length(&out),LIT_LENGTH(lit1)+LIT_LENGTH(lit2),"lengths should equal after concatenation")
+    TEST_ASSERT_EQ(memcmp(out.data,"concat strings",sb_length(&out)),0,"concatenation output should be correct!")
+    TEST_ASSERT(sb_length(&out) == out.capacity,"capacity should be the same as length!")
+
+    sb_free(&out);
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(string_concat_tests,concat_mut3) {
+    StringMut out;
+    const char lit1[] = "concat ";
+    const char lit2[] = "strings";
+    const StringView buff1 = VIEW_FROM_LIT(lit1);
+    const StringView buff2 = VIEW_FROM_LIT(lit2);
+
+    TEST_MEM_CHECK(sb_concat_mut,&out,&buff1,&buff2)
+
+    TEST_ASSERT_EQ(sb_length(&out),LIT_LENGTH(lit1)+LIT_LENGTH(lit2),"lengths should equal after concatenation")
+    TEST_ASSERT_EQ(memcmp(out.data,"concat strings",sb_length(&out)),0,"concatenation output should be correct!")
+    TEST_ASSERT(sb_length(&out) == out.capacity,"capacity should be the same as length!")
+
+    sb_free(&out);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(string_concat_tests,concat1) {
+    String out;
+    StringMut buff1;
+    StringMut buff2;
+    const char lit1[] = "concat ";
+    const char lit2[] = "strings";
+
+    TEST_MEM_CHECK(sb_init,&buff1,LIT_LENGTH(lit1));
+    TEST_MEM_CHECK(sb_init,&buff2,LIT_LENGTH(lit2));
+    BUFF_FROM_LIT(buff1,lit1)
+    BUFF_FROM_LIT(buff2,lit2)
+
+    TEST_MEM_CHECK(sb_concat,&out,&buff1,&buff2)
+
+    TEST_ASSERT_EQ(sb_length(&out),LIT_LENGTH(lit1)+LIT_LENGTH(lit2),"lengths should equal after concatenation")
+    TEST_ASSERT_EQ(memcmp(out.data,"concat strings",sb_length(&out)),0,"concatenation output should be correct!")
+
+
+    sb_free(&out);
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(string_concat_tests,concat2) {
+    String out;
+    String buff1;
+    String buff2;
+    const char lit1[] = "concat ";
+    const char lit2[] = "strings";
+
+    BUFF_FROM_LIT_ALLOC(buff1,lit1)
+    BUFF_FROM_LIT_ALLOC(buff2,lit2)
+
+    TEST_MEM_CHECK(sb_concat,&out,&buff1,&buff2)
+
+    TEST_ASSERT_EQ(sb_length(&out),LIT_LENGTH(lit1)+LIT_LENGTH(lit2),"lengths should equal after concatenation")
+    TEST_ASSERT_EQ(memcmp(out.data,"concat strings",sb_length(&out)),0,"concatenation output should be correct!")
+
+
+    sb_free(&out);
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(string_concat_tests,concat3) {
+    String out;
+    const char lit1[] = "concat ";
+    const char lit2[] = "strings";
+    const StringView buff1 = VIEW_FROM_LIT(lit1);
+    const StringView buff2 = VIEW_FROM_LIT(lit2);
+
+    TEST_MEM_CHECK(sb_concat,&out,&buff1,&buff2)
+
+    TEST_ASSERT_EQ(sb_length(&out),LIT_LENGTH(lit1)+LIT_LENGTH(lit2),"lengths should equal after concatenation")
+    TEST_ASSERT_EQ(memcmp(out.data,"concat strings",sb_length(&out)),0,"concatenation output should be correct!")
+
+
+    sb_free(&out);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_copy_tests,copy_mut1) {
+    StringMut out;
+    StringMut buff;
+    const char lit[] = "string to copy";
+    TEST_MEM_CHECK(sb_init,&buff,LIT_LENGTH(lit))
+    BUFF_FROM_LIT(buff,lit)
+
+    TEST_MEM_CHECK(sb_copy_mut,&out,&buff)
+
+    TEST_ASSERT_EQ(sb_length(&out),sb_length(&buff),"lengths after copy should match")
+    TEST_ASSERT_EQ(memcmp(out.data,buff.data,sb_length(&out)),0,"datashould match")
+    TEST_ASSERT(sb_length(&out) == out.capacity,"capacity should be the same as length!")
+
+    sb_free(&out);
+    sb_free(&buff);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_copy_tests,copy_mut2) {
+    StringMut out;
+    String buff;
+    const char lit[] = "string to copy";
+    BUFF_FROM_LIT_ALLOC(buff,lit)
+
+    TEST_MEM_CHECK(sb_copy_mut,&out,&buff)
+
+    TEST_ASSERT_EQ(sb_length(&out),sb_length(&buff),"lengths after copy should match")
+    TEST_ASSERT_EQ(memcmp(out.data,buff.data,sb_length(&out)),0,"datashould match")
+    TEST_ASSERT(sb_length(&out) == out.capacity,"capacity should be the same as length!")
+
+    sb_free(&out);
+    sb_free(&buff);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_copy_tests,copy_mut3) {
+    StringMut out;
+    const char lit[] = "string to copy";
+    const StringView buff = VIEW_FROM_LIT(lit);
+
+    TEST_MEM_CHECK(sb_copy_mut,&out,&buff)
+
+    TEST_ASSERT_EQ(sb_length(&out),sb_length(&buff),"lengths after copy should match")
+    TEST_ASSERT_EQ(memcmp(out.data,buff.data,sb_length(&out)),0,"datashould match")
+    TEST_ASSERT(sb_length(&out) == out.capacity,"capacity should be the same as length!")
+
+    sb_free(&out);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_copy_tests,copy1) {
+    String out;
+    StringMut buff;
+    const char lit[] = "string to copy";
+    TEST_MEM_CHECK(sb_init,&buff,LIT_LENGTH(lit))
+    BUFF_FROM_LIT(buff,lit)
+
+    TEST_MEM_CHECK(sb_copy,&out,&buff)
+
+    TEST_ASSERT_EQ(sb_length(&out),sb_length(&buff),"lengths after copy should match")
+    TEST_ASSERT_EQ(memcmp(out.data,buff.data,sb_length(&out)),0,"datashould match")
+
+    sb_free(&out);
+    sb_free(&buff);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_copy_tests,copy2) {
+    String out;
+    String buff;
+    const char lit[] = "string to copy";
+    BUFF_FROM_LIT_ALLOC(buff,lit)
+
+    TEST_MEM_CHECK(sb_copy,&out,&buff)
+
+    TEST_ASSERT_EQ(sb_length(&out),sb_length(&buff),"lengths after copy should match")
+    TEST_ASSERT_EQ(memcmp(out.data,buff.data,sb_length(&out)),0,"datashould match")
+
+
+    sb_free(&out);
+    sb_free(&buff);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_copy_tests,copy3) {
+    String out;
+    const char lit[] = "string to copy";
+    const StringView buff = VIEW_FROM_LIT(lit);
+
+    TEST_MEM_CHECK(sb_copy,&out,&buff)
+
+    TEST_ASSERT_EQ(sb_length(&out),sb_length(&buff),"lengths after copy should match")
+    TEST_ASSERT_EQ(memcmp(out.data,buff.data,sb_length(&out)),0,"datashould match")
+
+    sb_free(&out);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_reset_tests,reset_empty) {
+    StringMut buff;
+    TEST_MEM_CHECK(sb_init,&buff,5)
+
+    sb_reset(&buff);
+
+    TEST_ASSERT_EQ(sb_length(&buff),0,"length should be 0!")
+    TEST_ASSERT_EQ(memcmp(buff.data,"",sb_length(&buff)),0,"data should match!")
+    TEST_ASSERT_EQ(buff.capacity,5,"capacity should equal!")
+
+    sb_free(&buff);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(string_reset_tests,reset_full) {
+    StringMut buff;
+    TEST_MEM_CHECK(sb_init,&buff,5)
+    const char lit[] = "lit";
+    BUFF_FROM_LIT(buff,lit)
+
+    sb_reset(&buff);
+
+    TEST_ASSERT_EQ(sb_length(&buff),0,"length should be 0!")
+    TEST_ASSERT_EQ(memcmp(buff.data,"",sb_length(&buff)),0,"data should match!")
+    TEST_ASSERT_EQ(buff.capacity,5,"capacity should equal!")
+
+    sb_free(&buff);
+
+    TEST_SUCCES
+}
+
+
+
+CREATE_TEST(string_edgecase_tests,sb_init_fail) {
+    StringMut buff;
+    bool ret = sb_init(&buff,INT64_MAX);
+
+    TEST_ASSERT_EQ(ret,false,"should fail to alloc!")
+    TEST_ASSERT_EQ(sb_length(&buff),0,"length should be 0!")
+    TEST_ASSERT_EQ(buff.capacity,0,"capacity should be 0!")
+    TEST_ASSERT_EQ(buff.data,NULL,"data should be NULL!")
+
+    TEST_SUCCES
+}
+
+
+
+CREATE_TEST(string_edgecase_tests,concat_overflow_mut) {
+    StringMut out;
+    const char lit1[] = "won't be concatenated!";
+    const char lit2[] = "neither will this!";
+    bool ret = __sb_concat_mut_impl(&out,lit1,SIZE_MAX - 55,lit2,70);
+
+    TEST_ASSERT_EQ(ret,false,"Shouled be false!")
+    TEST_ASSERT_EQ(out.data,NULL,"data should be null!")
+    
+    TEST_SUCCES
+}
+
+CREATE_TEST(string_edgecase_tests,concat_overflow) {
+    String out;
+    const char lit1[] = "won't be concatenated!";
+    const char lit2[] = "neither will this!";
+    bool ret = __sb_concat_impl(&out,lit1,SIZE_MAX - 55,lit2,70);
+
+    TEST_ASSERT_EQ(ret,false,"Shouled be false!")
+    TEST_ASSERT_EQ(out.data,NULL,"data should be null!")
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_edgecase_tests,append_overflow) {
+    StringMut out;
+    const char lit1[] = "Basic string data";
+    const char lit2[] = "won't be appended";
+    TEST_MEM_CHECK(sb_init,&out,LIT_LENGTH(lit1))
+    BUFF_FROM_LIT(out,lit1)
+    bool ret = __sb_append_string_impl(&out,lit2,SIZE_MAX - 10);
+
+    TEST_ASSERT_EQ(ret,false,"Shouled be false!")
+    TEST_ASSERT_EQ(memcmp(out.data,lit1,sb_length(&out)),0,"length should match the old length")    
+    TEST_ASSERT_EQ(sb_length(&out),LIT_LENGTH(lit1),"data should match the old data")
+    TEST_ASSERT_EQ(out.capacity,LIT_LENGTH(lit1),"capacity should not be changed")
+
+    sb_free(&out);
+
     TEST_SUCCES
 }
