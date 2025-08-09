@@ -37,11 +37,11 @@ if ((expr1) == (expr2)) {                           \
 
 #define LIT_LENGTH(x) sizeof(x)-1
 
-#define BUFF_FROM_LIT(buff,lit)             \
+#define BUFF_FROM_LIT(buff,lit)                     \
     memcpy((void *)buff.data,lit,LIT_LENGTH(lit));  \
     buff.length = LIT_LENGTH(lit);
 
-#define BUFF_FROM_LIT_ALLOC(buff,lit)       \
+#define STRING_FROM_LIT(buff,lit)       \
     buff.data = malloc(LIT_LENGTH(lit));    \
     if(!buff.data) {                        \
         TEST_MEM_FAIL                       \
@@ -50,5 +50,9 @@ if ((expr1) == (expr2)) {                           \
     
 #define VIEW_FROM_LIT(lit)  \
 (const StringView) {.data = lit, .length = LIT_LENGTH(lit)}
+
+#define STRING_MUT_FROM_LIT(buff,lit)               \
+    TEST_MEM_CHECK(sb_init,&buff,LIT_LENGTH(lit))   \
+    BUFF_FROM_LIT(buff,lit)
 
 #endif

@@ -89,12 +89,15 @@ bool __sb_append_string_impl(StringMut *out, const char *buff, size_t buff_len) 
 	assert(buff != NULL);
 
 	if (SIZE_MAX - buff_len < out->length) {
-		return false;
+		return false; //first overflow check
 	}
 
 	size_t total_cap_required = out->length + buff_len;
 	if (out->capacity < total_cap_required) {
-		size_t new_cap = total_cap_required + total_cap_required/2; //1.5 grpwth strategy
+		if ((UINT64_MAX / 3) * 2 < total_cap_required) {
+			return false; //second overflow check
+		}	
+		size_t new_cap = total_cap_required + total_cap_required/2; //1.5 growth strategy
 		
 		char * new_data = realloc(out->data,new_cap);
 
@@ -117,7 +120,6 @@ bool __sb_concat_mut_impl(StringMut *out, const char *buff1, size_t buff_len1, c
 	assert(buff2 != NULL);
 
 	if (SIZE_MAX - buff_len1 < buff_len2) {
-		out->data = NULL; //safe to free in case of overflow
 		return false;
 	}
 
@@ -137,7 +139,6 @@ bool __sb_concat_impl(String *out, const char *buff1, size_t buff_len1, const ch
 	assert(buff2 != NULL);
 
 	if (SIZE_MAX - buff_len1 < buff_len2) {
-		out->data = NULL; //safe to free in case of overflow
 		return false;
 	}
 
