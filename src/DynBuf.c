@@ -156,6 +156,17 @@ bool __sb_concat_impl(String *out, const char *buff1, size_t buff_len1, const ch
 
 }
 
+int __sb_cmp_impl(const char *buff1, size_t buff1_len, const char *buff2, size_t buff2_len) {
+	assert(buff1 != NULL);
+	assert(buff2 != NULL);
+
+	if (buff1_len != buff2_len) {
+		return buff1_len - buff2_len;
+	}
+
+	return memcmp(buff1,buff2,buff1_len);
+}
+
 
 void __sb_free(StringMut *buf) {
 	assert(buf != NULL);

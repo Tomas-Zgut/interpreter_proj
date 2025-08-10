@@ -317,6 +317,33 @@ typedef struct {
 	const StringView *: __sb_print_impl	\
 )((buff)->data, (buff)->length)	
 
+/**
+ * @brief Overloaded function for comapring strings
+ * 
+ * @par Function compares 2 strings, does not gurantee total ordering.
+ * If both strings are the same 0 is returned. If they do not have the same lenght
+ * the difference is of lengths is returned. If they are the same length the return value
+ * is the same as memcmp.
+ * Supported buffer types:
+ * - StringMut  -> mutable string type @see StringMut
+ * - StringVeiw -> non owning immutable view into a buffer @see StringView
+ * - String -> owning immutable string type @see String
+ * 
+ * @param buff1: string to compare (type dependend)
+ * @param buff2: string to compare (type dependend)
+ * 
+ * @returns 0 if both strings equal, non zero if strings are different @see memcmp
+ * 
+ * @see __sb_cmp_impl
+ */
+#define sb_cmp(buff1,buff2) 			\
+	__sb_cmp_impl(						\
+		__FIELD_ACCES(buff1,data),		\
+		__FIELD_ACCES(buff1,length),	\
+		__FIELD_ACCES(buff2,data),		\
+		__FIELD_ACCES(buff2,length)		\
+	)	
+
 bool sb_init(StringMut *buff, size_t initial_capacity);
 bool sb_append_char(StringMut *buf, char c);
 void sb_reset(StringMut *buf);
@@ -453,4 +480,41 @@ static inline void __sb_print_impl(const char *buff, size_t buff_len) {
 	assert(buff_len < INT32_MAX);
 	printf("%.*s\n",(int32_t)buff_len, buff);
 }
+
+/**
+ * @brief Function compares 2 raw strings
+ * 
+ * @param buff1: raw string to compare
+ * @param buff1_len: length of a raw string
+ * @param buff2: raw string to compare
+ * @param buff2_len: length of a raw string
+ * 
+ * @par Function compares raw 2 strings, does not gurantee total ordering.
+ * If both strings are the same 0 is returned. If they do not have the same lenght
+ * the difference is of lengths is returned. If they are the same length the return value
+ * is the same as memcmp.
+ * 
+ * @note Function should not be used @see sb_cmp
+ * 
+ * @returns 0 if both strings equal, non zero if strings are different @see memcmp
+ */
+int __sb_cmp_impl(const char *buff1, size_t buff1_len, const char *buff2, size_t buff2_len);
+
+/**
+ * @brief Function transfers the ownership from the passed in String
+ * 
+ * @par Function is used to semanticaly transfer ownership from one string into another.
+ * It creates a shallow copy of the source string. Only 
+ * 
+ * @param string pointer to a string
+ * 
+ * @warning the input string should not be referenced again!!
+ * 
+ * @returns a new string with the ownership of the data
+ */
+static inline  String __sb_move_string(String *string) {
+	assert(string != NULL);
+	return (String) {.data = string->data, .length = string->length};
+}
+
 #endif
