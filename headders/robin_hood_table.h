@@ -7,10 +7,9 @@
  */
 typedef struct
 {
-	String key; 		// unmutable key of a table entry
-	uint32_t hash;		// hash of a table enry key
-	uint32_t distance;	// distance from an ideal locaion
-	bool ocupied;		// flag true if entry id ocupied
+	uint32_t data_index;	// index to the data
+	uint16_t distance;		// distance from an ideal locaion 
+	uint16_t finger_print;	// 1st bit falg, 15bits top 15bits of hash
 } rh_table_entry_t;
 
 /**
@@ -23,11 +22,12 @@ typedef struct
  */
 typedef struct
 {	
-	rh_table_entry_t *entries; // array of table entries
-	uint8_t *entry_data;			// array for entry data
-	uint32_t entry_data_size;		// size of entry data
-	uint32_t size;			// size of a table
-	uint32_t capacity;		// capacity of a table
+	rh_table_entry_t *entries; 	// array of table metadata
+	String *entry_keys;			// array for entry keys
+	uint8_t *entry_data;		// array for entry data
+	uint32_t entry_data_size;	// size of entry data
+	uint32_t size;				// size of a table
+	uint32_t capacity;			// capacity of a table
 } rh_table_t;
 
 
@@ -50,12 +50,10 @@ typedef struct
 typedef enum {
 	RH_TABLE_ALLOC_FAIL,
 	RH_TABLE_SUCCESS,
-	RH_TABLE_NEW_ENTRY,
 	RH_TABLE_TABLE_FULL,
 	RH_TABLE_TABLE_EMPTY,
 	RH_TABLE_KEY_FOUND,
 	RH_TABLE_KEY_NOT_FOUND,
-	RH_TABLE_INVALID_ADDRESS,
 	RH_TABLE_INVALID_ARGS
 } rh_table_ret;
 
@@ -94,7 +92,7 @@ typedef void (*cleanup_func_t)(void *elm_ptr);
  * 
  * @see rh_table_ret
  */
-rh_table_ret rh_table_init(rh_table_t *table, int32_t entry_size, int32_t size);
+rh_table_ret rh_table_init(rh_table_t *table, uint32_t entry_size, uint32_t size);
 
 /**
  * @brief function to look up data in the table with a key
@@ -292,18 +290,8 @@ rh_table_iter_t rh_table_iter_init(const rh_table_t *table);
  */
 rh_table_iter_ret rh_table_iter_next(rh_table_iter_t *iter);
 
-/**
- * @brief function to reset the iterator.
- * 
- * @par Function resets a given iterator so it can be used to 
- * traverse the table again
- * 
- * @param iter: pointer to a table iterator
- */
-static inline void rh_table_iter_reinit(rh_table_iter_t *iter) {
-	assert(iter != NULL);
-
-	iter->table_line = 0;
+static inline bool rh_table_iter_valid(const rh_table_iter_t *iter) {
+	return iter->table_line < iter->table->capacity;
 }
 
 /**
@@ -316,8 +304,8 @@ static inline void rh_table_iter_reinit(rh_table_iter_t *iter) {
 static inline StringView rh_table_iter_get_key(const rh_table_iter_t *iter) {
 	assert(iter != NULL);
 
-	const rh_table_entry_t entry = iter->table->entries[iter->table_line];
-	return sb_get_view(&entry.key,0);
+	const rh_table_t *table = iter->table;
+	return sb_get_view(table->entry_keys + table->entries[iter->table_line].data_index,0);
 	
 }
 /**
@@ -330,23 +318,19 @@ static inline StringView rh_table_iter_get_key(const rh_table_iter_t *iter) {
 static inline void *rh_table_iter_get_data(const rh_table_iter_t *iter) {
 	assert(iter != NULL);
 
-	const rh_table_t * table = iter->table;
-	return table->entry_data + table->entry_data_size * iter->table_line;
+	const rh_table_t *table = iter->table;
+	return table->entry_data + table->entries[iter->table_line].data_index*table->entry_data_size;
 }
 
 /**
  * @brief Macro for easier iteration over the table. Creates a new iterator.
+ * 
+ * @param iter_name: name of the iterator variable
+ * @param table: pointer to a table
  */
-#define TABLE_ITER_NEW(iter_name,table)							\
-	rh_table_iter_t iter_name = rh_table_iter_init((table));	\
-	while(rh_table_iter_next(&iter_name) != RH_TABLE_ITER_END)						
-
-/**
- * @brief Macro for easier iteration over the table. Reinitializes an old
- * iterator insetead of making a new one.
- */
-#define TABLE_ITER_REINIT(iter_name)							\
-	rh_table_iter_reinit((&table));								\
-	while(rh_table_iter_next(&iter_name) != RH_TABLE_ITER_END)					
-
+#define RH_TABLE_ITER(iter_name,table)								\
+	for (rh_table_iter_t iter_name = rh_table_iter_init(table);		\
+		rh_table_iter_valid(&(iter_name));							\
+		rh_table_iter_next(&(iter_name))							\
+	)
 #endif
