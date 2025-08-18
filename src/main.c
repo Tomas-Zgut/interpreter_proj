@@ -71,7 +71,7 @@ void process_tokens(LexerContext *ctx) {
 				sb_free(&token->value.string_val);
 				break;
 			case TOKEN_INT:
-				printf("Literal (INT: %llu)\n", token->value.int_val);
+				printf("Literal (INT: %lu)\n", token->value.int_val);
 				break;
 			case TOKEN_STRING:
 				printf("Literal (STRING: %.*s)\n", (int)token->value.string_val.length, token->value.string_val.data);

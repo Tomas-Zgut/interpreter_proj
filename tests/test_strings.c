@@ -765,3 +765,192 @@ CREATE_TEST(string_misc_tests,string_free2) {
 
     TEST_SUCCES
 }
+
+CREATE_TEST(string_cmp_tests,string_cmp_eq1) {
+    StringMut buff1;
+    StringMut buff2;
+    const char lit[] = "equal strings!";
+    STRING_MUT_FROM_LIT(buff1,lit)
+    STRING_MUT_FROM_LIT(buff2,lit)
+
+    TEST_ASSERT_EQ(sb_cmp(&buff1,&buff2),0,"result should be 0!")
+
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_eq2) {
+    String buff1;
+    String buff2;
+    const char lit[] = "equal strings!";
+    STRING_FROM_LIT(buff1,lit)
+    STRING_FROM_LIT(buff2,lit)
+
+    TEST_ASSERT_EQ(sb_cmp(&buff1,&buff2),0,"result should be 0!")
+
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_eq3) {
+    const char lit[] = "equal strings!";
+    const StringView buff1 = VIEW_FROM_LIT(lit);
+    const StringView buff2 = VIEW_FROM_LIT(lit);
+
+    TEST_ASSERT_EQ(sb_cmp(&buff1,&buff2),0,"result should be 0!")
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_shorter1) {
+    StringMut buff1;
+    StringMut buff2;
+    const char lit1[] = "longer string";
+    const char lit2[] = "string";
+    STRING_MUT_FROM_LIT(buff1,lit1)
+    STRING_MUT_FROM_LIT(buff2,lit2)
+    const int len_diff = LIT_LENGTH(lit1) - LIT_LENGTH(lit2);
+
+    TEST_ASSERT_EQ(sb_cmp(&buff1,&buff2),len_diff,"result should be 7")
+
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_shorter2) {
+    String buff1;
+    String buff2;
+    const char lit1[] = "longer string";
+    const char lit2[] = "string";
+    STRING_FROM_LIT(buff1,lit1)
+    STRING_FROM_LIT(buff2,lit2)
+    int len_diff = (int)(LIT_LENGTH(lit1) - LIT_LENGTH(lit2));
+
+    TEST_ASSERT_EQ(sb_cmp(&buff1,&buff2),len_diff,"result should be 7")
+
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_shorter3) {
+    const char lit1[] = "longer string";
+    const char lit2[] = "string";
+    const StringView buff1 = VIEW_FROM_LIT(lit1);
+    const StringView buff2 = VIEW_FROM_LIT(lit2);
+    int len_diff = (int)(LIT_LENGTH(lit1) - LIT_LENGTH(lit2));
+
+    TEST_ASSERT_EQ(sb_cmp(&buff1,&buff2),len_diff,"result should be 7")
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(string_cmp_tests,string_cmp_longer1) {
+    StringMut buff1;
+    StringMut buff2;
+    const char lit1[] = "longer string";
+    const char lit2[] = "string";
+    STRING_MUT_FROM_LIT(buff1,lit1)
+    STRING_MUT_FROM_LIT(buff2,lit2)
+    int len_diff = (int)(LIT_LENGTH(lit2) - LIT_LENGTH(lit1));
+
+    TEST_ASSERT_EQ(sb_cmp(&buff2,&buff1),len_diff,"result should be -7")
+
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_longer2) {
+    String buff1;
+    String buff2;
+    const char lit1[] = "longer string";
+    const char lit2[] = "string";
+    STRING_FROM_LIT(buff1,lit1)
+    STRING_FROM_LIT(buff2,lit2)
+    int len_diff = (int)(LIT_LENGTH(lit2) - LIT_LENGTH(lit1));
+    
+    TEST_ASSERT_EQ(sb_cmp(&buff2,&buff1),len_diff,"result should be -7")
+
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_longer3) {
+    const char lit1[] = "longer string";
+    const char lit2[] = "string";
+    const StringView buff1 = VIEW_FROM_LIT(lit1);
+    const StringView buff2 = VIEW_FROM_LIT(lit2);
+    int len_diff = (int)(LIT_LENGTH(lit2) - LIT_LENGTH(lit1));
+    
+    TEST_ASSERT_EQ(sb_cmp(&buff2,&buff1),len_diff,"result should be -7")
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_neq1) {
+    StringMut buff1;
+    StringMut buff2;
+    const char lit1[] = "stringa";
+    const char lit2[] = "stringb";
+    STRING_MUT_FROM_LIT(buff1,lit1)
+    STRING_MUT_FROM_LIT(buff2,lit2)
+
+    TEST_ASSERT_NEQ(sb_cmp(&buff2,&buff1),0,"should not be 0!")
+
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_neq2) {
+    String buff1;
+    String buff2;
+    const char lit1[] = "stringa";
+    const char lit2[] = "stringb";
+    STRING_FROM_LIT(buff1,lit1)
+    STRING_FROM_LIT(buff2,lit2)
+    
+    TEST_ASSERT_NEQ(sb_cmp(&buff2,&buff1),0,"should not be 0!")
+
+    sb_free(&buff1);
+    sb_free(&buff2);
+
+    TEST_SUCCES
+}
+
+
+
+CREATE_TEST(string_cmp_tests,string_cmp_neq3) {
+    const char lit1[] = "stringa";
+    const char lit2[] = "stringb";
+    const StringView buff1 = VIEW_FROM_LIT(lit1);
+    const StringView buff2 = VIEW_FROM_LIT(lit2);
+    
+    TEST_ASSERT_NEQ(sb_cmp(&buff2,&buff1),0,"should not be 0!")
+
+    TEST_SUCCES
+}
