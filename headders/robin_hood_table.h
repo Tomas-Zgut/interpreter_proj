@@ -290,7 +290,16 @@ rh_table_iter_t rh_table_iter_init(const rh_table_t *table);
  */
 rh_table_iter_ret rh_table_iter_next(rh_table_iter_t *iter);
 
+/**
+ * @brief function checks if the iterator should continue iterating
+ * 
+ * @param iter: pointer to a table iterator
+ * 
+ * @returns true if iteration should continue, false otherwise
+ */
 static inline bool rh_table_iter_valid(const rh_table_iter_t *iter) {
+	assert(iter != NULL);
+
 	return iter->table_line < iter->table->capacity;
 }
 

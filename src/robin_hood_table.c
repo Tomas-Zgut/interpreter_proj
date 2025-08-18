@@ -281,8 +281,7 @@ rh_table_ret rh_table_delete_custom(rh_table_t *table, const StringView *key, co
     const rh_table_pos_t slot = __rh_table_find_slot(table,hash,key);
     
     if (slot.result != RH_TABLE_SLOT_FOUND_KEY) {
-        
-        return RH_TABLE_SUCCESS;
+        return RH_TABLE_KEY_NOT_FOUND;
     }
     
     table->size--;
@@ -302,14 +301,16 @@ rh_table_ret rh_table_resize(rh_table_t *table) {
     rh_table_entry_t *old_entries = table->entries;
     uint8_t *old_entry_data = table->entry_data;
     String *old_keys = table->entry_keys;
+    const uint32_t old_capacity = table->capacity;
 
     rh_table_ret ret_val = __rh_table_realloc(table);
 
     if (ret_val != RH_TABLE_SUCCESS) {
         return ret_val;
     }
+
     
-    for (uint32_t entry_index = 0; entry_index < table->size; entry_index++) {
+    for (uint32_t entry_index = 0; entry_index < old_capacity; entry_index++) {
 
         const rh_table_entry_t *old_entry = old_entries + entry_index;
         const uint32_t data_index = old_entry->data_index;
@@ -317,7 +318,7 @@ rh_table_ret rh_table_resize(rh_table_t *table) {
             continue;
         }
         const StringView key = sb_get_view(old_keys + data_index,0);
-        const void * data = table->entry_data + data_index*table->entry_data_size;
+        const void *data = old_entry_data + data_index*table->entry_data_size;
         __rh_table_rehash_insert(table,&key,data);
 
     }     
@@ -589,7 +590,7 @@ static inline void __rh_table_rehash_insert(rh_table_t *table, const StringView 
         }
 
         if (current_entry.distance < distance) {
-
+            new_entry.distance = distance;
             rh_table_entry_t temp = current_entry;
             *current_entry_ptr = new_entry;
             new_entry = temp;
@@ -604,11 +605,12 @@ static inline void __rh_table_rehash_insert(rh_table_t *table, const StringView 
 
         pos = (pos + 1) & mask;
     }
-    
+
     //insert
     table->entries[orig_entry_pos].data_index = kicked_out_idx;
-    memcpy(table->entry_keys + kicked_out_idx,(const String *)key,sizeof(String));
-    memcpy(table->entry_data + kicked_out_idx,data,table->entry_data_size);
+    String temp = (String) {.data = key->data, .length = key->length};
+    memcpy(table->entry_keys + kicked_out_idx,&temp,sizeof(String));
+    memcpy(table->entry_data + kicked_out_idx*table->entry_data_size,data,table->entry_data_size);
 }
 
 static inline void __rh_table_shift_back(rh_table_t *table,uint32_t stating_position) {
@@ -619,7 +621,6 @@ static inline void __rh_table_shift_back(rh_table_t *table,uint32_t stating_posi
     uint32_t prev_position = stating_position;
     rh_table_entry_t displaced_entry = table->entries[stating_position];
     SET_SLOT_EMPTY(displaced_entry.finger_print);
-    const rh_table_entry_t original_displaced_entry = displaced_entry;
 
     while (true)
     {
@@ -627,20 +628,18 @@ static inline void __rh_table_shift_back(rh_table_t *table,uint32_t stating_posi
         rh_table_entry_t *prev_entry = table->entries + prev_position;
 
         if (SLOT_EMPTY(current_entry->finger_print)) {
-            *prev_entry = original_displaced_entry;
+            *prev_entry = displaced_entry;
             return;
         }
 
         if (current_entry->distance == 0) {
-            *prev_entry = original_displaced_entry;
+            *prev_entry = displaced_entry;
             return;
         }
 
         if (current_entry->distance > 0) {
             current_entry->distance--;
-            rh_table_entry_t temp = *current_entry;
-            *current_entry = displaced_entry;
-            displaced_entry = temp;
+            *prev_entry = *current_entry;
         }
         prev_position = position;
         position = (position + 1) & mask;
