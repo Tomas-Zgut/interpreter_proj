@@ -46,8 +46,10 @@ typedef enum
  *
  *  - `JUMP_TABLE_ALLOC_ERR` - initalization failed due to a failed allocation
  */
-static inline jump_table_ret jump_talbe_init(jump_table_t *table)
+static inline jump_table_ret jump_table_init(jump_table_t *table)
 {
+	assert(table != NULL);
+
 	return (jump_table_ret)rh_table_init(&table->_table, sizeof(jump_table_entry_t), JUMP_TABLE_INIT_SIZE);
 }
 
@@ -62,8 +64,11 @@ static inline jump_table_ret jump_talbe_init(jump_table_t *table)
  */
 static inline jump_table_entry_t *jump_table_lookup(const jump_table_t *table, const StringView *jump_label)
 {
+	assert(table != NULL);
+	assert(jump_label != NULL);
+
 	jump_table_entry_t *result = NULL;
-	const rh_table_ret ret = rh_table_look_up(&table->_table, jump_label, (void **)&result);
+	rh_table_look_up(&table->_table, jump_label, (void **)&result);
 	return result;
 }
 
@@ -84,6 +89,10 @@ static inline jump_table_entry_t *jump_table_lookup(const jump_table_t *table, c
  */
 static inline jump_table_ret jump_table_insert(jump_table_t *table, const StringView *jump_label, jump_table_entry_t **out)
 {
+	assert(table != NULL);
+	assert(jump_label != NULL);
+	assert(out != NULL);
+
 	rh_table_ret ret = rh_table_insert(&table->_table, jump_label, (void **)out);
 
 	if (ret == RH_TABLE_TABLE_FULL)
@@ -93,9 +102,21 @@ static inline jump_table_ret jump_table_insert(jump_table_t *table, const String
 			return JUMP_TABLE_ALLOC_ERR;
 		}
 		ret = rh_table_insert(&table->_table, jump_label, (void **)out);
+		assert(ret == RH_TABLE_SUCCESS);
 	}
 
 	return (jump_table_ret)ret;
+}
+
+/**
+ * @brief function for cleaning up after a jump table
+ * 
+ * @param table: pointer to a jump table
+ */
+static inline void jump_table_free(jump_table_t *table) {
+	assert(table != NULL);
+
+	rh_table_free(&table->_table);
 }
 
 /**
@@ -107,6 +128,8 @@ static inline jump_table_ret jump_table_insert(jump_table_t *table, const String
  */
 static inline StringView jump_table_iter_get_key(const jump_table_iter_t *iter)
 {
+	assert(iter != NULL);
+
 	return rh_table_iter_get_key(&iter->_iter);
 }
 
@@ -118,7 +141,9 @@ static inline StringView jump_table_iter_get_key(const jump_table_iter_t *iter)
  * @returns mutable pointer to data in a jump table at iterator's position
  */
 static inline jump_table_entry_t *jump_table_iter_get_entry_mut(const jump_table_iter_t *iter)
-{
+{	
+	assert(iter != NULL);
+
 	return (jump_table_entry_t *)rh_table_iter_get_data(&iter->_iter);
 }
 
@@ -131,8 +156,15 @@ static inline jump_table_entry_t *jump_table_iter_get_entry_mut(const jump_table
  */
 static inline const jump_table_entry_t *jump_table_iter_get_entry(const jump_table_iter_t *iter)
 {
+	assert(iter != NULL);
+
 	return (const jump_table_entry_t *)rh_table_iter_get_data(&iter->_iter);
 }
+
+
+#define __JUMP_TABLE_MAKE_ITER(expr) {._iter = expr}
+#define __JUMP_TABLE_ACCESS_TABLE(t) &table->_table
+#define __JUMP_TABLE_ACCESS_ITER(iter_name) iter_name._iter
 
 /**
  * @brief Macro for easy iteration over the jump table
@@ -148,10 +180,8 @@ static inline const jump_table_entry_t *jump_table_iter_get_entry(const jump_tab
  * @see jump_table_iter_get_entry_mut
  * @see jump_table_iter_get_key
  */
-#define JUMP_TABLE_ITER(iter_name, table)                                      \
-	for (jump_table_iter_t iter_name = {rh_table_iter_init(&(table)->_table)}; \
-		 rh_table_iter_valid(&iter_name._iter);                                \
-		 rh_table_iter_next(&iter_name._iter))
+#define JUMP_TABLE_ITER(iter_name, table) \
+	__RH_TABLE_ITER_IMPL(iter_name, table, jump_table_iter_t, __JUMP_TABLE_MAKE_ITER, __JUMP_TABLE_ACCESS_TABLE, __JUMP_TABLE_ACCESS_ITER)
 
 /**
  * @brief function checks is all entris in the table are valid.
@@ -162,6 +192,8 @@ static inline const jump_table_entry_t *jump_table_iter_get_entry(const jump_tab
  */
 static inline bool jump_table_check_entries(const jump_table_t *table)
 {
+	assert(table != NULL);
+
 	JUMP_TABLE_ITER(iter, table)
 	{
 		const jump_table_entry_t *entry = jump_table_iter_get_entry(&iter);
@@ -170,6 +202,7 @@ static inline bool jump_table_check_entries(const jump_table_t *table)
 			return false;
 		}
 	}
+
 	return true;
 }
 
