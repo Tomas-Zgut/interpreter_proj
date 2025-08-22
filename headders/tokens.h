@@ -12,6 +12,7 @@ typedef enum {
 	TOKEN_NIL,
 	TOKEN_VARIABLE,
 	TOKEN_LABEL,
+	TOKEN_TYPE,
 	TOKEN_UNKNOWN,
 	TOKEN_EOF,
 } token_type;

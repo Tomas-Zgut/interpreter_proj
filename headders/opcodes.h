@@ -125,13 +125,13 @@ static inline operand_type_t get_operand_type(opcode_type opcode, int operand) {
 /**
  * @brief function to compare 2 operand types
  *
- * @param opt1: first operand type to compare
- * @param opt2: secone operand type to compare
+ * @param opt1: operand type from the instrucion
+ * @param opt2: operand type from the token
  *
  * @returns true if operands are compatible, false otherwise
  */
 static inline bool compare_operand_types(operand_type_t opt1,
 										 operand_type_t opt2) {
-	return (opt1 & opt2) != 0;
+	return (opt1 & opt2) != opt2;
 }
 #endif
