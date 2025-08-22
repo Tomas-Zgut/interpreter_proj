@@ -664,3 +664,75 @@ CREATE_TEST(table_iter_tests,iter_init) {
 
     TEST_SUCCES
 }
+
+
+CREATE_TEST(table_iter_tests,iter_over_table) {
+    rh_table_t table;
+    TEST_MEM_CHECK(rh_table_init,&table,8,16)
+
+    char data[8] = "abcdefg";
+    char *data_ptr = data;
+    const StringView key = VIEW_FROM_LIT(data);
+    TEST_MEM_CHECK(rh_table_insert,&table,&key,(void**)&data_ptr)
+    const StringView key2 = VIEW_FROM_LIT("key2");
+    TEST_MEM_CHECK(rh_table_insert,&table,&key2,(void**)&data_ptr)
+    const StringView key3 = VIEW_FROM_LIT("key3");
+    TEST_MEM_CHECK(rh_table_insert,&table,&key3,(void**)&data_ptr)
+    uint32_t count = 0;
+    RH_TABLE_ITER(iter,&table) {
+        count ++;
+    }
+    TEST_ASSERT_EQ(count,3,"Should iterate 3 times")
+
+    rh_table_free(&table);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(table_iter_tests,iter_over_table_rehash) {
+    rh_table_t table;
+    TEST_MEM_CHECK(rh_table_init,&table,8,16)
+
+    char data[8] = "abcdefg";
+    char *data_ptr = data;
+    const StringView key = VIEW_FROM_LIT(data);
+    TEST_MEM_CHECK(rh_table_insert,&table,&key,(void**)&data_ptr)
+    const StringView key2 = VIEW_FROM_LIT("key2");
+    TEST_MEM_CHECK(rh_table_insert,&table,&key2,(void**)&data_ptr)
+    const StringView key3 = VIEW_FROM_LIT("key3");
+    TEST_MEM_CHECK(rh_table_insert,&table,&key3,(void**)&data_ptr)
+    TEST_MEM_CHECK(rh_table_resize,&table)
+    uint32_t count = 0;
+    RH_TABLE_ITER(iter,&table) {
+        count ++;
+    }
+    TEST_ASSERT_EQ(count,3,"Should iterate 3 times")
+
+    rh_table_free(&table);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(table_iter_tests,iter_over_table_delete) {
+    rh_table_t table;
+    TEST_MEM_CHECK(rh_table_init,&table,8,16)
+
+    char data[8] = "abcdefg";
+    char *data_ptr = data;
+    const StringView key = VIEW_FROM_LIT(data);
+    TEST_MEM_CHECK(rh_table_insert,&table,&key,(void**)&data_ptr)
+    const StringView key2 = VIEW_FROM_LIT("key2");
+    TEST_MEM_CHECK(rh_table_insert,&table,&key2,(void**)&data_ptr)
+    const StringView key3 = VIEW_FROM_LIT("key3");
+    TEST_MEM_CHECK(rh_table_insert,&table,&key3,(void**)&data_ptr)
+    TEST_ASSERT_EQ(rh_table_delete(&table,&key),RH_TABLE_SUCCESS,"should succeed")
+    uint32_t count = 0;
+    RH_TABLE_ITER(iter,&table) {
+        count ++;
+    }
+    TEST_ASSERT_EQ(count,2,"Should iterate 2 times")
+
+    rh_table_free(&table);
+
+    TEST_SUCCES
+}

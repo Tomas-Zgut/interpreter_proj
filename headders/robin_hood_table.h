@@ -331,15 +331,25 @@ static inline void *rh_table_iter_get_data(const rh_table_iter_t *iter) {
 	return table->entry_data + table->entries[iter->table_line].data_index*table->entry_data_size;
 }
 
+
+/**
+ * @brief Macro used for implementing itaration over the table.
+ * 
+ * @par Macro is useful for types that contain the table to create iterators over those types (not just the table)
+ */
+#define __RH_TABLE_ITER_IMPL(iter_name,table,iter_type,MAKE_ITER,ACCESSS_TABLE,ACCESS_ITER)		\
+	for (iter_type iter_name = MAKE_ITER(rh_table_iter_init(ACCESSS_TABLE(table)));				\
+		rh_table_iter_valid(&(ACCESS_ITER(iter_name)));											\
+		rh_table_iter_next(&(ACCESS_ITER(iter_name)))											\
+	)
+
+#define __EMTPY(expr) expr
 /**
  * @brief Macro for easier iteration over the table. Creates a new iterator.
  * 
  * @param iter_name: name of the iterator variable
  * @param table: pointer to a table
  */
-#define RH_TABLE_ITER(iter_name,table)								\
-	for (rh_table_iter_t iter_name = rh_table_iter_init(table);		\
-		rh_table_iter_valid(&(iter_name));							\
-		rh_table_iter_next(&(iter_name))							\
-	)
+#define RH_TABLE_ITER(iter_name,table) __RH_TABLE_ITER_IMPL(iter_name,table,rh_table_iter_t,__EMTPY,__EMTPY,__EMTPY)
+
 #endif
