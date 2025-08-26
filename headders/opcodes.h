@@ -2,10 +2,10 @@
 #define __OPCODES_H__
 #include <stdbool.h>
 
-#define INS_NUMBER(x) x << 24
-#define OPERAND_1(x) x << 16
-#define OPERAND_2(x) x << 8
-#define OPERAND_3(x) x << 0
+#define INS_NUMBER(x) (x << 24)
+#define OPERAND_1(x) (x << 16)
+#define OPERAND_2(x) (x << 8)
+#define OPERAND_3(x) (x << 0)
 
 #define OP_COUNT_MASK 0x3FFFFFFF
 #define OP_TYPE_MASK 0xFF
@@ -133,5 +133,16 @@ static inline operand_type_t get_operand_type(opcode_type opcode, int operand) {
 static inline bool compare_operand_types(operand_type_t opt1,
 										 operand_type_t opt2) {
 	return (opt1 & opt2) != opt2;
+}
+
+/**
+ * @brief function to check if an instruction has a label operand
+ * 
+ * @param opcode: instruction opcode
+ * 
+ * @returns true if instrucion has label operand, false otherwise
+ */
+static inline bool has_label(opcode_type opcode) {
+	return (opcode & OPERAND_1(OP_LABEL)) == OPERAND_1(OP_LABEL);
 }
 #endif
