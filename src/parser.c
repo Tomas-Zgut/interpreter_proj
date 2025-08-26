@@ -98,6 +98,7 @@ ir_alloc_err:
 arg_type_err:
 operand_token_err:
     for (int i = 0; i < alloced_tokens; i++) {
+        token_free(operand_tokens[i]);
         free(operand_tokens[i]);
     }
     free(instruction);

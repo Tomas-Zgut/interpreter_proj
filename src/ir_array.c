@@ -20,6 +20,8 @@
  */
 bool __ir_array_alloc(ir_array *array, uint64_t size);
 
+void __elm_array_clear(ir_elm_t *elemets,uint64_t size);
+
 /*
 *****************************************************************
 |					Public ir_array functions					|
@@ -59,7 +61,7 @@ bool ir_array_add_elm(ir_array *array,opcode_type op_code, token_t **arg_array)
 	ir_elm_t new_ir_elm;
 	new_ir_elm.opcode = op_code;
 	for (int i = 0; i < operand_count; i++) {
-		new_ir_elm.operands[i] = *arg_array[i];
+		token_move(arg_array[i],new_ir_elm.operands + i);
 	}
 	array->elements[array->size++] = new_ir_elm;
 	return true;
@@ -76,7 +78,7 @@ void ir_array_free(ir_array *array) {
     if (array->elements == NULL) {
         return;
     }
-	
+	__elm_array_clear(array->elements,array->size);
     free(array->elements);
 	
     array->elements = NULL;
@@ -94,7 +96,7 @@ bool __ir_array_alloc(ir_array *array, uint64_t size)
 {
 	assert(array != NULL);
 	
-	ir_elm_t *new_elems = (ir_elm_t *)realloc(array->elements, size);
+	ir_elm_t *new_elems = (ir_elm_t *)realloc(array->elements, size*sizeof(ir_elm_t));
 	if (new_elems == NULL)
 	{
 		return false;
@@ -103,6 +105,18 @@ bool __ir_array_alloc(ir_array *array, uint64_t size)
 	array->elements = new_elems;
 	array->capacity = size;
 	return true;
+}
+
+void __elm_array_clear(ir_elm_t *elements, uint64_t size) {
+	assert(elements != NULL);
+
+	for (uint64_t elm_idx = 0; elm_idx < size; elm_idx++) {
+		ir_elm_t elm = elements[elm_idx];
+		const int op_num = get_number_opperands(elm.opcode);
+		for (int op_idx = 0; op_idx < op_num; op_idx++) {
+			token_free(elm.operands);
+		}
+	}
 }
 
 /*
@@ -126,5 +140,8 @@ void ir_free(ir *ir) {
         return;
     }
 
+	__elm_array_clear(ir->elements,ir->size);
+
     free(ir->elements);
+	ir->elements = NULL;
 }
