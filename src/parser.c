@@ -54,7 +54,7 @@ parser_ret parser_parse_line(Parser *parser) {
     }
 
     const opcode_type opcode = instruction->value.ins_opcode;
-    const int arg_count = get_number_opperands(opcode) >> 30;
+    const int arg_count = get_number_opperands(opcode);
     int alloced_tokens = 0;
 
     for (int operand_idx = 0; operand_idx < arg_count; operand_idx++) {

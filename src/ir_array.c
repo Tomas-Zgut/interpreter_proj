@@ -55,7 +55,7 @@ bool ir_array_add_elm(ir_array *array,opcode_type op_code, token_t **arg_array)
 		}
 	}
 	
-	const int operand_count = get_number_opperands(op_code) >> 30;
+	const int operand_count = get_number_opperands(op_code);
 	ir_elm_t new_ir_elm;
 	new_ir_elm.opcode = op_code;
 	for (int i = 0; i < operand_count; i++) {

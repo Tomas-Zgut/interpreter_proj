@@ -14,7 +14,7 @@
 
 arg_type_check_t instruction_args_valid(opcode_type opcode, token_t **arg_tokens) {
     assert(arg_tokens != NULL);
-    const int num_args = get_number_opperands(opcode) >> 30;
+    const int num_args = get_number_opperands(opcode);
     
     for (int i = 0; i <num_args;i++) {
 
