@@ -1,13 +1,14 @@
 #ifndef __OPCODES_H__
 #define __OPCODES_H__
 #include <stdbool.h>
+#include<assert.h>
 
-#define INS_NUMBER(x) x << 24
-#define OPERAND_1(x) x << 16
-#define OPERAND_2(x) x << 8
-#define OPERAND_3(x) x << 0
+#define INS_NUMBER(x) (x << 24)
+#define OPERAND_1(x) (x << 16)
+#define OPERAND_2(x) (x << 8)
+#define OPERAND_3(x) (x << 0)
 
-#define OP_COUNT_MASK 0x3FFFFFFF
+#define OP_COUNT_MASK (3u << 30)
 #define OP_TYPE_MASK 0xFF
 /**
  * @brief enum represent the number of
@@ -106,32 +107,45 @@ typedef enum {
  *
  * @returns number of operands for an intruction
  */
-static inline operand_count_t get_number_opperands(opcode_type opcode) {
-	return opcode & OP_COUNT_MASK;
+static inline int get_number_opperands(opcode_type opcode) {
+	return (opcode & OP_COUNT_MASK) >> 30;
 }
 
 /**
  * @brief function to extract the type of an operand from an opcode
  *
  * @param opcode: instruction opcode
- * @param operand: operand number
+ * @param operand: operand numer 
  *
  * @returns the type of a operand for an instruction
  */
 static inline operand_type_t get_operand_type(opcode_type opcode, int operand) {
-	return opcode >> ((3 - operand) * 8) & 0xFF;
+	assert(operand > 0 || operand < 4);
+
+	return opcode >> ((3 - operand) * 8) & OP_TYPE_MASK;
 }
 
 /**
  * @brief function to compare 2 operand types
  *
- * @param opt1: first operand type to compare
- * @param opt2: secone operand type to compare
+ * @param opt1: operand type from the instrucion
+ * @param opt2: operand type from the token
  *
  * @returns true if operands are compatible, false otherwise
  */
 static inline bool compare_operand_types(operand_type_t opt1,
 										 operand_type_t opt2) {
-	return (opt1 & opt2) != 0;
+	return (opt1 & opt2) == opt2;
+}
+
+/**
+ * @brief function to check if an instruction has a label operand
+ * 
+ * @param opcode: instruction opcode
+ * 
+ * @returns true if instrucion has label operand, false otherwise
+ */
+static inline bool has_label(opcode_type opcode) {
+	return (opcode & OPERAND_1(OP_LABEL)) == OPERAND_1(OP_LABEL);
 }
 #endif

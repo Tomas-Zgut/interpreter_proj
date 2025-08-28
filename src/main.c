@@ -1,6 +1,4 @@
-#include <headders/lexer.h>
-#include <headders/tokens.h>
-#include <headders/string_buffer.h>
+#include<headders/parser.h>
 #include <string.h>
 
 void print_help(const char* program_name) {
@@ -43,7 +41,7 @@ int parse_args(setup_t *config,int argc, const char *argv[]) {
 	config->file = fopen(argv[1],"r");
 	return 1;
 }
-
+// TODO remove
 // Funkce pro ukázkové zpracování tokenů
 void process_tokens(LexerContext *ctx) {
 	token_t *token;
@@ -105,30 +103,36 @@ int main(int argc, const char* argv[]) {
 	if (ret <= 0) {
 		return ret == 0 ? 0 : 1;
 	}
-
+	ret = 0;
 	if (config.file == NULL) {
 		fprintf(stderr,"Failed to open %s\n",argv[1]);
 		return 2;
 	}
 
-	LexerContext ctx;
-	if(!lexer_init(&ctx,config.file)) {
-		fprintf(stderr,"Failed to initialize lexer\n");
-		if(config.file != stdin) {
-			fclose(config.file);
-		}
-		return 3;
+	Parser *parser = parser_create(config.file);
+	if (parser == NULL) {
+		fprintf(stderr,"Failed to initialize parser\n!");
+		ret = 3;
+		goto parser_init_err;
 	}
 
-	// Nově přidaná část, která zpracovává tokeny
-	process_tokens(&ctx);
+	const parser_ret parser_retval = parser_parse_file(parser);
+	if (parser_retval != PARSER_SUCCESS) {
+		ret = 4;
+		goto parse_fail;
+	}
+
+	ir program_ir = parser_get_ir(parser);
+	parser_free(parser); //parser is no longer necessary
 
 
+	ir_free(&program_ir);
+parse_fail:
+parser_init_err:
 	if(config.file != stdin) {
 		fclose(config.file);
 	}
 
-	lexer_free(&ctx);
-	return 0;
+	return ret;
 
 }
