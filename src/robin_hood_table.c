@@ -1,7 +1,7 @@
 #include<headders/robin_hood_table.h>
 #include<headders/hashes.h>
 #include<string.h>
-#include<immintrin.h>
+
 typedef enum {
     RH_TABLE_SLOT_FOUND_EMPTY,
     RH_TABLE_SLOT_FOUND_KEY,
@@ -23,7 +23,7 @@ typedef struct {
 #define SET_SLOT_EMPTY(slot) slot &= ~OCCUPIED_MASK;
 
 #define HASH_MASK 0x7FFF
-#define MASKED_HASH(x) ((x >> 17) & HASH_MASK)
+#define MASKED_HASH(x) ((x >> 49) & HASH_MASK)
 
 #define REALLOC_FREE(new,old)   \
     if ((new) != (old)) {       \
@@ -80,7 +80,7 @@ static inline rh_table_ret __rh_table_realloc(rh_table_t *table);
  * @see rh_table_pos_t
  * @see rh_table_find_ret
  */
-static inline rh_table_pos_t __rh_table_find_slot(const rh_table_t *table, uint32_t hash, const StringView *key);
+static inline rh_table_pos_t __rh_table_find_slot(const rh_table_t *table, uint64_t hash, const StringView *key);
 
 /**
  * @brief private funcion that inserts an already created key value pair into the table
@@ -131,7 +131,7 @@ rh_table_ret rh_table_init(rh_table_t *table, uint32_t data_size, uint32_t size)
     }
 
     // initialize entry indexes
-    for (uint32_t entry_idx = 0; entry_idx < (uint32_t)size; entry_idx++) {
+    for (uint32_t entry_idx = 0; entry_idx < size; entry_idx++) {
         entries[entry_idx].data_index = entry_idx;
         entries[entry_idx].finger_print = 0;
     }
@@ -160,7 +160,7 @@ rh_table_ret rh_table_look_up(const rh_table_t *table,const StringView *key, voi
     assert(key != NULL);
     assert(data_out != NULL);
 
-    const uint32_t hash = get_hash(key);
+    const uint64_t hash = get_hash(key);
     const rh_table_pos_t slot = __rh_table_find_slot(table,hash,key);
 
     if (slot.result == RH_TABLE_SLOT_FOUND_KEY) {
@@ -176,11 +176,11 @@ rh_table_ret rh_table_insert(rh_table_t *table,const StringView *key, void **dat
     assert(key != NULL);
     assert(data_out != NULL);
 
-    if (table->size + 1 >= table->capacity * 0.9f ) {
+    if (table->size + 1 >= table->capacity * (15.0f/16) ) {
         return RH_TABLE_TABLE_FULL;
     }
     
-    const uint32_t hash = get_hash(key);
+    const uint64_t hash = get_hash(key);
     const uint32_t mask = table->capacity - 1;
     uint32_t pos = hash & mask;
     uint16_t distance = 0;
@@ -253,7 +253,7 @@ rh_table_ret rh_table_delete(rh_table_t *table,const StringView *key) {
         return RH_TABLE_TABLE_EMPTY;
     }
 
-    const uint32_t hash = get_hash(key);
+    const uint64_t hash = get_hash(key);
     const rh_table_pos_t slot = __rh_table_find_slot(table,hash,key);
 
     if (slot.result != RH_TABLE_SLOT_FOUND_KEY) {
@@ -277,7 +277,7 @@ rh_table_ret rh_table_delete_custom(rh_table_t *table, const StringView *key, co
         return RH_TABLE_TABLE_EMPTY;
     }
 
-    const uint32_t hash = get_hash(key);
+    const uint64_t hash = get_hash(key);
     const rh_table_pos_t slot = __rh_table_find_slot(table,hash,key);
     
     if (slot.result != RH_TABLE_SLOT_FOUND_KEY) {
@@ -481,7 +481,7 @@ rh_table_iter_ret rh_table_iter_next(rh_table_iter_t *iter) {
         .result=res             \
     }
 
-static inline rh_table_pos_t __rh_table_find_slot(const rh_table_t *table, uint32_t hash, const StringView *key) {
+static inline rh_table_pos_t __rh_table_find_slot(const rh_table_t *table, uint64_t hash, const StringView *key) {
     const uint32_t wrap_mask = table->capacity - 1;
     uint32_t pos = hash & wrap_mask;
     uint16_t distance = 0;
@@ -562,7 +562,7 @@ static inline void __rh_table_rehash_insert(rh_table_t *table, const StringView 
     assert(key != NULL);
     assert(data != NULL);
 
-    const uint32_t hash = get_hash(key);
+    const uint64_t hash = get_hash(key);
     const uint32_t mask = table->capacity - 1;
 
     uint32_t pos = hash & mask;
@@ -608,8 +608,7 @@ static inline void __rh_table_rehash_insert(rh_table_t *table, const StringView 
 
     //insert
     table->entries[orig_entry_pos].data_index = kicked_out_idx;
-    String temp = (String) {.data = key->data, .length = key->length};
-    memcpy(table->entry_keys + kicked_out_idx,&temp,sizeof(String));
+    memcpy(table->entry_keys + kicked_out_idx,key,sizeof(String));
     memcpy(table->entry_data + kicked_out_idx*table->entry_data_size,data,table->entry_data_size);
 }
 

@@ -25,7 +25,7 @@ typedef struct
 	rh_table_entry_t *entries; 	// array of table metadata
 	String *entry_keys;			// array for entry keys
 	uint8_t *entry_data;		// array for entry data
-	uint32_t entry_data_size;	// size of entry data
+	uint64_t entry_data_size;	// size of entry data
 	uint32_t size;				// size of a table
 	uint32_t capacity;			// capacity of a table
 } rh_table_t;
