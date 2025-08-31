@@ -103,7 +103,7 @@ static inline void __rh_table_shift_back(rh_table_t *table, uint32_t position);
 */
 
 
-rh_table_ret rh_table_init(rh_table_t *table, uint32_t data_size, uint32_t size) {
+rh_table_ret rh_table_init_deleter(rh_table_t *table, uint32_t data_size, uint32_t size,cleanup_func_t deleter) {
     assert(table != NULL);
 
     if(!IS_POWER_OF_2(size)) {
@@ -141,6 +141,7 @@ rh_table_ret rh_table_init(rh_table_t *table, uint32_t data_size, uint32_t size)
     table->entry_data = entry_data;
     table->entry_keys = entry_keys;
     table->capacity = size;
+    table->cleanup = deleter;
     table->size = 0;
     return RH_TABLE_SUCCESS;
 
@@ -263,36 +264,12 @@ rh_table_ret rh_table_delete(rh_table_t *table,const StringView *key) {
     table->size--;
     const uint32_t data_idx = table->entries[slot.pos].data_index;
     sb_free(table->entry_keys + data_idx);
+    if (table->cleanup) {
+        table->cleanup(table->entry_data + data_idx*table->entry_data_size);
+    }
     __rh_table_shift_back(table,slot.pos);
     return RH_TABLE_SUCCESS;
 }
-
-
-rh_table_ret rh_table_delete_custom(rh_table_t *table, const StringView *key, const cleanup_func_t callback) {
-    assert(table != NULL);
-    assert(key != NULL);
-    assert(callback != NULL);
-
-    if (table->size == 0) {
-        return RH_TABLE_TABLE_EMPTY;
-    }
-
-    const uint64_t hash = get_hash(key);
-    const rh_table_pos_t slot = __rh_table_find_slot(table,hash,key);
-    
-    if (slot.result != RH_TABLE_SLOT_FOUND_KEY) {
-        return RH_TABLE_KEY_NOT_FOUND;
-    }
-    
-    table->size--;
-    const uint32_t data_idx = table->entries[slot.pos].data_index;
-    sb_free(table->entry_keys + data_idx);
-    callback(table->entry_data + data_idx*table->entry_data_size);
-    __rh_table_shift_back(table,slot.pos);
-    return RH_TABLE_SUCCESS;
-}
-
-
 
 rh_table_ret rh_table_resize(rh_table_t *table) {
     assert(table != NULL);
@@ -342,26 +319,9 @@ void rh_table_clear(rh_table_t *table) {
         }
         SET_SLOT_EMPTY(entry->finger_print);
         sb_free(table->entry_keys + pos);
-    }
-
-    table->size = 0;
-}
-
-
-void rh_table_clear_custom(rh_table_t *table, cleanup_func_t callback) {
-    assert(table != NULL);
-    assert(callback != NULL);
-
-    for (uint32_t entry_idx = 0; entry_idx < table->capacity; entry_idx++) {
-        rh_table_entry_t *entry = table->entries + entry_idx;
-        const uint32_t pos = entry->data_index;
-        if (SLOT_EMPTY(entry->finger_print)) {
-            continue;
+        if (table->cleanup) {
+            table->cleanup(table->entry_data + pos*table->entry_data_size);
         }
-        
-        SET_SLOT_EMPTY(entry->finger_print);
-        sb_free(table->entry_keys + pos);
-        callback(table->entry_data + pos*table->entry_data_size);
     }
 
     table->size = 0;
@@ -377,28 +337,6 @@ void rh_table_free(rh_table_t *table) {
     }
 
     rh_table_clear(table);
-
-    free(table->entries);
-    free(table->entry_data);
-    free(table->entry_keys);
-
-    table->entry_data = NULL;
-    table->entries = NULL;
-    table->entry_keys = NULL;
-}
-
-
-void rh_table_free_custom(rh_table_t *table, cleanup_func_t callback) {
-    assert(table != NULL);
-    assert(callback != NULL);
-
-    if (table->entries == NULL || 
-        table->entry_data == NULL || 
-        table->entry_keys == NULL) {
-        return;
-    }
-
-    rh_table_clear_custom(table,callback);
 
     free(table->entries);
     free(table->entry_data);

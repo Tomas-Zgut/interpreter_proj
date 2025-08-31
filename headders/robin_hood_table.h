@@ -13,6 +13,16 @@ typedef struct
 } rh_table_entry_t;
 
 /**
+ * @brief pointer to users cleanup function
+ * 
+ * @param elm_ptr: pointer to the data that needs to be deleted
+ * 
+ * @note the elm_ptr belongs to the table and it is only valid during the
+ * execution of this funcion
+ */
+typedef void (*cleanup_func_t)(void *elm_ptr);
+
+/**
  * @brief structure of a robin hood hasing table
  * 
  * @par Table is a robin hood table so that means 
@@ -25,6 +35,7 @@ typedef struct
 	rh_table_entry_t *entries; 	// array of table metadata
 	String *entry_keys;			// array for entry keys
 	uint8_t *entry_data;		// array for entry data
+	cleanup_func_t cleanup;		// poitner to a cleanup function
 	uint64_t entry_data_size;	// size of entry data
 	uint32_t size;				// size of a table
 	uint32_t capacity;			// capacity of a table
@@ -69,17 +80,24 @@ typedef enum
 } rh_table_iter_ret;
 
 /**
- * @brief pointer to users cleanup function
+ * @brief function to initialize the table with a deleter function
+ *
+ * @param[out] table: table to initialize
+ * @param[in] entry_size: the size of user's data
+ * @param[in] size: the initial capaciy of the table
+ * @param[in] deleter: user provided function to proprerly delete their data
  * 
- * @param elm_ptr: pointer to the data that needs to be deleted
+ * @returns
+ * - `RH_TABLE_ALLOC_FAIL` - in case the allocation fails
  * 
- * @note the elm_ptr belongs to the table and it is only valid during the
- * execution of this funcion
+ * - `RH_TABLE_SUCCESS` - in case the function succeeds
+ * 
+ * @see rh_table_ret
  */
-typedef void (*cleanup_func_t)(void *elm_ptr);
+rh_table_ret rh_table_init_deleter(rh_table_t *table, uint32_t entry_size, uint32_t size,cleanup_func_t deleter);
 
 /**
- * @brief function to initialize the table
+ * @brief function to initialize the table, without a deleter fucntion
  *
  * @param[out] table: table to initialize
  * @param[in] entry_size: the size of user's data
@@ -91,8 +109,12 @@ typedef void (*cleanup_func_t)(void *elm_ptr);
  * - `RH_TABLE_SUCCESS` - in case the function succeeds
  * 
  * @see rh_table_ret
+ * @rh_table_init_deleter
  */
-rh_table_ret rh_table_init(rh_table_t *table, uint32_t entry_size, uint32_t size);
+static inline rh_table_ret rh_table_init(rh_table_t *table, uint32_t entry_size,uint32_t size) {
+	return rh_table_init_deleter(table, entry_size, size,NULL);
+}
+
 
 /**
  * @brief function to look up data in the table with a key
@@ -140,6 +162,8 @@ rh_table_ret rh_table_insert(rh_table_t *table, const StringView *key, void **da
 /**
  * @brief function to delete a table entry
  * 
+ * @par If the user has provided a custom deleter it will be called for the deleted element
+ * 
  * @param table: pointer to a table
  * @param key: key to delete
  * 
@@ -154,27 +178,6 @@ rh_table_ret rh_table_insert(rh_table_t *table, const StringView *key, void **da
  */
 rh_table_ret rh_table_delete(rh_table_t *table, const StringView *key);
 
-/**
- * @brief function to delete a table enrry with a call back
- * 
- * @par Function delets an entry from the table and calls the users callback
- * function to clean up their data
- * 
- * @param table: pointer to a table
- * @param key: key to delete
- * @param callback: user defined function to clean up their data
- * 
- * @returns
- * - `RH_TABLE_TABLE_EMPTY` - in case the table is empty
- * 
- * - `RH_TABLE_KEY_NOT_FOUND` - in case user provides an addres of an already deleted key value pair
- * 
- * - `RH_TABLE_SUCCESS` - in case the function succeeds
- * 
- * @see rh_table_ret
- * @see cleanup_func_t
- */
-rh_table_ret rh_table_delete_custom(rh_table_t *table, const StringView *key, cleanup_func_t callback);
 
 /**
  * @brief function to resize the table
@@ -205,38 +208,18 @@ rh_table_ret rh_table_resize(rh_table_t *table);
 void rh_table_clear(rh_table_t *table);
 
 /**
- * @brief function to clear out a table with user
- * defined cleanup
- * 
- * @param table: pointer to a table
- * @param callback: user defined function to clean up data 
- * from the table
- * 
- * @see cleanup_func_t
- */
-void rh_table_clear_custom(rh_table_t *table, cleanup_func_t callback);
-
-/**
  * @brief function to clean up a table
+ * 
+ * @par If the user has provided a custom deleter it will be called for each elemet
  * 
  * @param table: pointer to a table
  */
 void rh_table_free(rh_table_t *table);
 
 /**
- * @brief function to clean up a table with user 
- * defined cleanup
- * 
- * @param table: pointer to a table
- * @param callback: user defined function to clean up data 
- * from the table
- * 
- * @see cleanup_func_t
- */
-void rh_table_free_custom(rh_table_t *table,cleanup_func_t callback);
-
-/**
  * @brief gettern for the table's size
+ * 
+ * @par If the user has provided a custom deleter it will be called for each elemet
  * 
  * @param table: pointer to a table
  * 
