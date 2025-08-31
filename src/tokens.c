@@ -14,7 +14,7 @@ void token_free(token_t *token) {
 		sb_free(&token->value.var_data.var_name);
 		return;
 	default:
-		return; // nothing to free
+		assert(false); //should never happen
 	}
 }
 
@@ -29,14 +29,12 @@ void token_move(token_t * src_token, token_t* dest_token) {
 	case TOKEN_LABEL:
 	case TOKEN_STRING:
 	case TOKEN_TYPE:
-		assert(src_token->value.string_val.data != NULL);
-		src_token->value.string_val.data = NULL;
+		dest_token->value.string_val = __sb_move_string(&src_token->value.string_val);
 		return;
 	case TOKEN_VARIABLE:
-		assert(src_token->value.var_data.var_name.data != NULL);
-		src_token->value.var_data.var_name.data = NULL;
+		dest_token->value.var_data.var_name = __sb_move_string(&src_token->value.string_val);
 		return;
 	default:
-		return;
+		assert(false); //should never happen
 	}
 }
