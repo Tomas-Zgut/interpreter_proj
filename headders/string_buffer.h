@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include<string.h>
 
+
+#include"optionals.h"
 /**
  * @brief Struct represents a mutable string type
  */
@@ -572,5 +574,8 @@ static inline StringMut sb_to_mutable(String *string) {
 	memset(string,0,sizeof(String));
 	return new_string;
 }
+DEFINE_OPTIONAL(String,str)
+DEFINE_OPTIONAL(StringView,str_view)
+DEFINE_OPTIONAL(StringMut,str_mut)
 
 #endif
