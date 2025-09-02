@@ -114,6 +114,39 @@ CREATE_TEST(table_misc_tests,table_capacity) {
     TEST_SUCCES
 }
 
+CREATE_TEST(table_misc_tests,table_move) {
+
+    rh_table_t table;
+    TEST_MEM_CHECK(rh_table_init,&table,6,16)
+
+    const StringView key = VIEW_FROM_LIT("key to lookup");
+    char data[6] = "abcdef";
+    char *ptr = data;
+    void **data_ptr = (void **)&ptr;
+    TEST_MEM_CHECK(rh_table_insert,&table,&key,data_ptr);
+
+    rh_table_t new_table = rh_table_move(&table);
+
+    TEST_ASSERT_EQ(table.entries,NULL,"old table should not have entries")
+    TEST_ASSERT_EQ(table.entry_data,NULL,"old table should not have entry data")
+    TEST_ASSERT_EQ(table.entry_keys,NULL,"old table should not have keys")
+    TEST_ASSERT_EQ(table.size,0,"old table should have 0 entries")
+    TEST_ASSERT_EQ(table.capacity,0,"old table should not have any capacity")
+
+    TEST_ASSERT_NEQ(new_table.entries,NULL,"new table should  have entries")
+    TEST_ASSERT_NEQ(new_table.entry_data,NULL,"new table should  have entry data")
+    TEST_ASSERT_NEQ(new_table.entry_keys,NULL,"new table should  have keys")
+    TEST_ASSERT_EQ(new_table.capacity,16,"new table should have 16 capacity")
+    TEST_ASSERT_EQ(new_table.size,1,"there should be 1 entry in the new table")
+    TEST_ASSERT_EQ(rh_table_look_up(&new_table,&key,data_ptr),RH_TABLE_SUCCESS,"key should be in new table")
+    TEST_ASSERT_EQ(memcmp(*data_ptr,data,6),0,"data should be equal in the new table")
+
+    rh_table_free(&table);
+    rh_table_free(&new_table);
+
+    TEST_SUCCES
+}   
+
 CREATE_TEST(table_look_up_tests,look_up_empty) {
     rh_table_t table;
     TEST_MEM_CHECK(rh_table_init,&table,6,16)

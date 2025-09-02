@@ -1,7 +1,7 @@
 #ifndef __ROBIN_HOOD_TABLE_H__
 #define __ROBIN_HOOD_TABLE_H__
 #include "string_buffer.h"
-
+#include <string.h>
 /**
  * @brief structure of a table entry
  */
@@ -335,4 +335,29 @@ static inline void *rh_table_iter_get_data(const rh_table_iter_t *iter) {
  */
 #define RH_TABLE_ITER(iter_name,table) __RH_TABLE_ITER_IMPL(iter_name,table,rh_table_iter_t,__EMTPY,__EMTPY,__EMTPY)
 
+
+/**
+ * @brief function to move a soruce table to a new table.
+ * 
+ * @par Function transfers ownership of data from @p src to a new table.
+ * This leaves @p src in an uninitialized state, and can only be freed afterwards (or reinitalized).
+ * This function can be called only one on an initialized table, otherwise there is an assertion 
+ * 
+ * @param src: table to move from
+ * 
+ * @returns a new table that has all the data from the @p src table
+ * 
+ * @warning If this function is called more than once on a given table there s an assertion
+ */
+static inline rh_table_t rh_table_move(rh_table_t *src) {
+	assert(src != NULL);
+	assert(src->entries != NULL);
+	assert(src->entry_data != NULL);
+	assert(src->entry_keys != NULL);
+
+	rh_table_t new_table;
+	memcpy(&new_table,src,sizeof(rh_table_t));
+	memset(src,0,sizeof(rh_table_t));
+	return new_table;
+}
 #endif
