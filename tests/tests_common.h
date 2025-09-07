@@ -1,7 +1,7 @@
 #ifndef __TESTS_COMMON__
 #define __TESTS_COMMON__
 #include<stdio.h>
-
+#include<string.h>
 /**
  * @brief Macro that defines a test case
  * 

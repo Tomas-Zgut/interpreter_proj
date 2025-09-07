@@ -19,7 +19,24 @@ CREATE_TEST(table_init_tests,init_valid) {
     TEST_ASSERT_EQ(table.size, 0,"table shoulb be empty!")
     TEST_ASSERT_NEQ(table.entries,NULL,"should be valid!")
     TEST_ASSERT_NEQ(table.entry_data,NULL,"should be valid!")
+    TEST_ASSERT_EQ(table.cleanup,NULL,"no deleter should be set")
 
+    rh_table_free(&table);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(table_init_tests,init_deleter) {
+    rh_table_t table;
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,6,16,free)
+
+    TEST_ASSERT_EQ(table.capacity,16,"capacity should be 16!")
+    TEST_ASSERT_EQ(table.entry_data_size,6,"the size of the data should be 6!")
+    TEST_ASSERT_EQ(table.size, 0,"table shoulb be empty!")
+    TEST_ASSERT_NEQ(table.entries,NULL,"should be valid!")
+    TEST_ASSERT_NEQ(table.entry_data,NULL,"should be valid!")
+    TEST_ASSERT_EQ(table.cleanup,free,"deleter should be set")
+    
     rh_table_free(&table);
 
     TEST_SUCCES
@@ -91,6 +108,47 @@ CREATE_TEST(table_misc_tests,table_capacity) {
     TEST_MEM_CHECK(rh_table_init,&table,6,16)
 
     TEST_ASSERT_EQ(rh_table_capacity(&table),16,"capacity should be 16!")
+
+    rh_table_free(&table);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(table_misc_tests,table_move) {
+
+    rh_table_t table;
+    TEST_MEM_CHECK(rh_table_init,&table,6,16)
+
+    const StringView key = VIEW_FROM_LIT("key to lookup");
+    char data[6] = "abcdef";
+    char *ptr = data;
+    void **data_ptr = (void **)&ptr;
+    TEST_MEM_CHECK(rh_table_insert,&table,&key,data_ptr);
+
+    rh_table_t new_table = rh_table_move(&table);
+
+    TEST_ASSERT(!rh_table_initialized(&table),"Old table should be left uninitialized")
+    TEST_ASSERT_EQ(table.size,0,"old table should have 0 entries")
+    TEST_ASSERT_EQ(table.capacity,0,"old table should not have any capacity")
+
+    TEST_ASSERT(rh_table_initialized(&new_table),"New table should be initialized")
+    TEST_ASSERT_EQ(new_table.capacity,16,"new table should have 16 capacity")
+    TEST_ASSERT_EQ(new_table.size,1,"there should be 1 entry in the new table")
+    TEST_ASSERT_EQ(rh_table_look_up(&new_table,&key,data_ptr),RH_TABLE_SUCCESS,"key should be in new table")
+    TEST_ASSERT_EQ(memcmp(*data_ptr,data,6),0,"data should be equal in the new table")
+
+    rh_table_free(&table);
+    rh_table_free(&new_table);
+
+    TEST_SUCCES
+}   
+
+CREATE_TEST(table_misc_tests,table_initialied) {
+    rh_table_t table = {0};
+
+    TEST_ASSERT(!rh_table_initialized(&table),"new table should not be initialized")
+    TEST_MEM_CHECK(rh_table_init,&table,6,16)
+    TEST_ASSERT(rh_table_initialized(&table),"new table should be initialized")
 
     rh_table_free(&table);
 
@@ -232,12 +290,12 @@ CREATE_TEST(table_delete_tests,delete_empty) {
     TEST_SUCCES;
 }
 
-CREATE_TEST(table_delete_tests,delete_custom_empty) {
+CREATE_TEST(table_delete_tests,delete_empty_with_deleter) {
     rh_table_t table;
-    TEST_MEM_CHECK(rh_table_init,&table,6,16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,6,16,free)
     const char lit[] = "key to delete";
     const StringView key = VIEW_FROM_LIT(lit);
-    TEST_ASSERT_EQ(rh_table_delete_custom(&table,&key,free),RH_TABLE_TABLE_EMPTY,"should not delete!")
+    TEST_ASSERT_EQ(rh_table_delete(&table,&key),RH_TABLE_TABLE_EMPTY,"should not delete!")
 
     rh_table_free(&table);
 
@@ -266,9 +324,9 @@ void some_free(void *data) {
 }
 
 
-CREATE_TEST(table_delete_tests,delete_custom) {
+CREATE_TEST(table_delete_tests,delete_with_deleter) {
     rh_table_t table;
-    TEST_MEM_CHECK(rh_table_init,&table,sizeof(String),16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,sizeof(String),16,some_free)
     const char lit[] = "key to delete";
     const StringView key = VIEW_FROM_LIT(lit);
     String out;
@@ -277,7 +335,7 @@ CREATE_TEST(table_delete_tests,delete_custom) {
 
     TEST_MEM_CHECK(rh_table_insert,&table,&key,&data_ptr)
 
-    TEST_ASSERT_EQ(rh_table_delete_custom(&table,&key,some_free),RH_TABLE_SUCCESS,"should delete!")
+    TEST_ASSERT_EQ(rh_table_delete(&table,&key),RH_TABLE_SUCCESS,"should delete!")
     TEST_ASSERT_EQ(table.size,0,"size should match")
 
     rh_table_free(&table);
@@ -304,9 +362,9 @@ CREATE_TEST(table_delete_tests,delete_wrong_key) {
     TEST_SUCCES;
 }
 
-CREATE_TEST(table_delete_tests,delete_custom_wrong_key) {
+CREATE_TEST(table_delete_tests,delete_wrong_key_with_deleter) {
     rh_table_t table;
-    TEST_MEM_CHECK(rh_table_init,&table,sizeof(String),16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,sizeof(String),16,some_free)
     const char lit[] = "key to delete";
     const char lit2[] ="key to insert";
     const StringView key = VIEW_FROM_LIT(lit);
@@ -317,9 +375,9 @@ CREATE_TEST(table_delete_tests,delete_custom_wrong_key) {
     
     TEST_MEM_CHECK(rh_table_insert,&table,&key2,&data_ptr)
 
-    TEST_ASSERT_EQ(rh_table_delete_custom(&table,&key,some_free),RH_TABLE_KEY_NOT_FOUND,"should not delete!")
+    TEST_ASSERT_EQ(rh_table_delete(&table,&key),RH_TABLE_KEY_NOT_FOUND,"should not delete!")
     TEST_ASSERT_EQ(table.size,1,"size should match")
-    rh_table_free_custom(&table,some_free);
+    rh_table_free(&table);
 
     TEST_SUCCES;
 }
@@ -353,11 +411,11 @@ CREATE_TEST(table_delete_tests,delete_full) {
        
 }
 
-CREATE_TEST(table_delete_tests,delete_custom_full) {
+CREATE_TEST(table_delete_tests,delete_full_with_deleter) {
     rh_table_t table;
     const char lit[] = "key to delete ";
     const size_t lit_size = LIT_LENGTH(lit) + LIT_LENGTH("xx") + 1;
-    TEST_MEM_CHECK(rh_table_init,&table,sizeof(String),16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,sizeof(String),16,some_free)
     const int max_table_size = 0.9f*16;
     for (int i = 0; i < max_table_size; i++) {
         char data[lit_size];
@@ -373,7 +431,7 @@ CREATE_TEST(table_delete_tests,delete_custom_full) {
         char data[lit_size];
         snprintf(data,lit_size,"%s%02d",lit,i);
         const StringView key = VIEW_FROM_LIT(data);
-        TEST_ASSERT_EQ(rh_table_delete_custom(&table,&key,some_free),RH_TABLE_SUCCESS,"delete should succeed")
+        TEST_ASSERT_EQ(rh_table_delete(&table,&key),RH_TABLE_SUCCESS,"delete should succeed")
     }
 
     rh_table_free(&table);
@@ -395,11 +453,11 @@ CREATE_TEST(table_clear_tests,clear_empty) {
     TEST_SUCCES
 }
 
-CREATE_TEST(table_clear_tests,clear_custom_empty) {
+CREATE_TEST(table_clear_tests,clear_empty_with_deleter) {
     rh_table_t table;
-    TEST_MEM_CHECK(rh_table_init,&table,sizeof(String),16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,sizeof(String),16,some_free)
 
-    rh_table_clear_custom(&table,some_free);
+    rh_table_clear(&table);
 
     rh_table_free(&table);
 
@@ -430,11 +488,11 @@ CREATE_TEST(table_clear_tests,clear_full) {
     TEST_SUCCES
 }
 
-CREATE_TEST(table_clear_tests,clear_custom_full) {
+CREATE_TEST(table_clear_tests,clear_full_with_deleter) {
     rh_table_t table;
     const char lit[] = "key to delete ";
     const size_t lit_size = LIT_LENGTH(lit) + LIT_LENGTH("xx") + 1;
-    TEST_MEM_CHECK(rh_table_init,&table,sizeof(String),16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,sizeof(String),16,some_free)
 
     //fill up table
     const int max_table_size = 0.9f*16;
@@ -448,7 +506,7 @@ CREATE_TEST(table_clear_tests,clear_custom_full) {
         TEST_ASSERT_EQ(rh_table_insert(&table,&key,&data_ptr),RH_TABLE_SUCCESS,"insert should succeed")
     }
 
-    rh_table_clear_custom(&table,some_free);
+    rh_table_clear(&table);
 
     rh_table_free(&table);
 
@@ -464,11 +522,11 @@ CREATE_TEST(table_free_tests,free_empty) {
     TEST_SUCCES
 }
 
-CREATE_TEST(table_free_tests,free_custom_empty) {
+CREATE_TEST(table_free_tests,free_empty_with_deleter) {
     rh_table_t table;
-    TEST_MEM_CHECK(rh_table_init,&table,20,16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,20,16,some_free)
 
-    rh_table_free_custom(&table,some_free);
+    rh_table_free(&table);
 
     TEST_SUCCES
 }
@@ -486,16 +544,16 @@ CREATE_TEST(table_free_tests,free) {
     TEST_SUCCES
 }
 
-CREATE_TEST(table_free_tests,free_custom) {
+CREATE_TEST(table_free_tests,free_with_deleter) {
     rh_table_t table;
-    TEST_MEM_CHECK(rh_table_init,&table,sizeof(String),16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,sizeof(String),16,some_free)
     const StringView key = VIEW_FROM_LIT("key");
     String out;
     TEST_MEM_CHECK(sb_copy,&out,&key)
     void *data_ptr = (void *)&out;
     TEST_ASSERT_EQ(rh_table_insert(&table,&key,&data_ptr),RH_TABLE_SUCCESS,"should succeed")
 
-    rh_table_free_custom(&table,some_free);
+    rh_table_free(&table);
 
     TEST_SUCCES
 }
@@ -514,17 +572,17 @@ CREATE_TEST(table_free_tests,free_double) {
     TEST_SUCCES
 }
 
-CREATE_TEST(table_free_tests,free_custom_double) {
+CREATE_TEST(table_free_tests,free_double_with_deleter) {
     rh_table_t table;
-    TEST_MEM_CHECK(rh_table_init,&table,sizeof(String),16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,sizeof(String),16,some_free)
     const StringView key = VIEW_FROM_LIT("key");
     String out;
     TEST_MEM_CHECK(sb_copy,&out,&key)
     void *data_ptr = (void *)&out;
     TEST_ASSERT_EQ(rh_table_insert(&table,&key,&data_ptr),RH_TABLE_SUCCESS,"should succeed")
     
-    rh_table_free_custom(&table,some_free);
-    rh_table_free_custom(&table,some_free);
+    rh_table_free(&table);
+    rh_table_free(&table);
 
     TEST_SUCCES
 }
@@ -581,11 +639,11 @@ CREATE_TEST(table_resize_tests,resize_full) {
     TEST_SUCCES
 }
 
-CREATE_TEST(table_resize_tests,resize_full_custom) {
+CREATE_TEST(table_resize_tests,resize_full_with_deleter) {
     rh_table_t table;
     const char lit[] = "key to insert ";
     const size_t lit_size = LIT_LENGTH(lit) + LIT_LENGTH("xx") + 1;
-    TEST_MEM_CHECK(rh_table_init,&table,sizeof(String),16)
+    TEST_MEM_CHECK(rh_table_init_deleter,&table,sizeof(String),16,some_free)
 
     //fill up table
     const int max_table_size = 0.9f*16;
@@ -617,7 +675,7 @@ CREATE_TEST(table_resize_tests,resize_full_custom) {
     }
     TEST_ASSERT_EQ(rh_table_insert(&table,&key,&data_ptr),RH_TABLE_SUCCESS,"insert should work now!")
 
-    rh_table_free_custom(&table,some_free);
+    rh_table_free(&table);
 
     TEST_SUCCES
 }

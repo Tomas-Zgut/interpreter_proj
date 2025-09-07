@@ -6,6 +6,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include<string.h>
+
+
+#include"optionals.h"
 /**
  * @brief Struct represents a mutable string type
  */
@@ -504,7 +508,7 @@ int __sb_cmp_impl(const char *buff1, size_t buff1_len, const char *buff2, size_t
  * @brief Function transfers the ownership from the passed in String
  * 
  * @par Function is used to semanticaly transfer ownership from one string into another.
- * It creates a shallow copy of the source string. Only 
+ * It creates a shallow copy of the source string.
  * 
  * @param string pointer to a string
  * 
@@ -512,9 +516,66 @@ int __sb_cmp_impl(const char *buff1, size_t buff1_len, const char *buff2, size_t
  * 
  * @returns a new string with the ownership of the data
  */
-static inline  String __sb_move_string(String *string) {
+static inline  String sb_move_string(String *string) {
 	assert(string != NULL);
-	return (String) {.data = string->data, .length = string->length};
+	assert(string->data != NULL);
+
+	const char *tmp_data = string->data;
+	const size_t tmp_lenght = string->length;
+	memset(string,0,sizeof(String));
+	return (String) {.data = tmp_data, .length = tmp_lenght};
 }
+
+/**
+ * @brief Function transfers the ownership from the passed in StringMut
+ * 
+ * @par Function is used to semanticaly transfer ownership from one string into another.
+ * It creates a shallow copy of the source string.
+ * 
+ * @param string pointer to a string
+ * 
+ * @warning the input string should not be referenced again!!
+ * 
+ * @returns a new string with the ownership of the data
+ */
+static inline  StringMut sb_move_string_mut(StringMut *string) {
+	assert(string != NULL);
+	assert(string->data != NULL);
+
+	char *tmp_data = string->data;
+	const size_t tmp_lenght = string->length;
+	const size_t tmp_cap = string->capacity;
+	memset(string,0,sizeof(StringMut));
+	return (StringMut) {.data = tmp_data, .length = tmp_lenght,.capacity = tmp_cap};
+}
+
+/**
+ * @brief funtion to transform an imuutable string into a mutable one
+ * 
+ * @par Function moves ownership of data from an immutable srting to a mutable one.
+ * The original srting is left unititialized, it is safe to call sb_free on.
+ * This function cannot be called more than once with the same sting
+ * 
+ * @param string: pointer to an owning immutable srting
+ * 
+ * @warning If this function is called more than once on a give string there is an assertion
+ * 
+ * @returns a mutable string with ownership of the original strings data
+ */
+static inline StringMut sb_to_mutable(String *string) {
+	assert(string != NULL);
+	assert(string->data != NULL);
+
+	StringMut new_string = (StringMut){
+		.data = (char *) string->data,
+		.length = string->length,
+		.capacity = string->length
+	};
+	memset(string,0,sizeof(String));
+	return new_string;
+}
+DEFINE_OPTIONAL(String,str)
+DEFINE_OPTIONAL(StringView,str_view)
+DEFINE_OPTIONAL(StringMut,str_mut)
 
 #endif

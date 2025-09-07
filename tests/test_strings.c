@@ -954,3 +954,58 @@ CREATE_TEST(string_cmp_tests,string_cmp_neq3) {
 
     TEST_SUCCES
 }
+
+CREATE_TEST(string_move_tests,string_move) {
+    const char lit[] = "this is a string";
+    String out;
+    STRING_FROM_LIT(out,lit)
+
+    String new = sb_move_string(&out);
+    TEST_ASSERT_EQ(memcmp(new.data,lit,sb_length(&new)),0,"data should be equal")
+    TEST_ASSERT_EQ(LIT_LENGTH(lit),sb_length(&new),"length of data should be equal")
+    TEST_ASSERT_EQ(out.data,NULL,"old data  should be null")
+    TEST_ASSERT_EQ(out.length,0,"old length should be 0")
+
+    sb_free(&out);
+    sb_free(&new);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(string_move_tests,string_mut_move) {
+    const char lit[] = "this is a string";
+    StringMut out;
+    STRING_MUT_FROM_LIT(out,lit)
+
+    StringMut new = sb_move_string_mut(&out);
+    TEST_ASSERT_EQ(memcmp(new.data,lit,sb_length(&new)),0,"data should be equal")
+    TEST_ASSERT_EQ(LIT_LENGTH(lit),sb_length(&new),"length of data should be equal")
+    TEST_ASSERT_EQ(new.capacity,LIT_LENGTH(lit),"new capacity should be correct")
+    TEST_ASSERT_EQ(out.data,NULL,"old data  should be null")
+    TEST_ASSERT_EQ(sb_length(&out),0,"old length should be 0")
+    TEST_ASSERT_EQ(out.capacity,0,"old capacity should be 0!")
+
+    sb_free(&out);
+    sb_free(&new);
+
+    TEST_SUCCES
+}
+
+
+CREATE_TEST(string_move_tests,move_to_mutable) {
+    const char lit[] = "this is a string";
+    String out;
+    STRING_FROM_LIT(out,lit)
+
+    StringMut new = sb_to_mutable(&out);
+    TEST_ASSERT_EQ(memcmp(new.data,lit,sb_length(&new)),0,"data should be equal")
+    TEST_ASSERT_EQ(LIT_LENGTH(lit),sb_length(&new),"length of data should be equal")
+    TEST_ASSERT_EQ(new.capacity,LIT_LENGTH(lit),"new capacity should be correct")
+    TEST_ASSERT_EQ(out.data,NULL,"old data  should be null")
+    TEST_ASSERT_EQ(sb_length(&out),0,"old length should be 0")
+
+    sb_free(&out);
+    sb_free(&new);
+
+    TEST_SUCCES
+}
