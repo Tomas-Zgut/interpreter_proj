@@ -160,6 +160,7 @@ rh_table_ret rh_table_look_up(const rh_table_t *table,const StringView *key, voi
     assert(table != NULL);
     assert(key != NULL);
     assert(data_out != NULL);
+    assert(rh_table_initialized(table));
 
     const uint64_t hash = get_hash(key);
     const rh_table_pos_t slot = __rh_table_find_slot(table,hash,key);
@@ -176,6 +177,7 @@ rh_table_ret rh_table_insert(rh_table_t *table,const StringView *key, void **dat
     assert(table != NULL);
     assert(key != NULL);
     assert(data_out != NULL);
+    assert(rh_table_initialized(table));
 
     if (table->size + 1 >= table->capacity * (15.0f/16) ) {
         return RH_TABLE_TABLE_FULL;
@@ -249,6 +251,7 @@ rh_table_ret rh_table_insert(rh_table_t *table,const StringView *key, void **dat
 rh_table_ret rh_table_delete(rh_table_t *table,const StringView *key) {
     assert(table != NULL);
     assert(key != NULL);
+    assert(rh_table_initialized(table));
 
     if (table->size == 0) {
         return RH_TABLE_TABLE_EMPTY;
@@ -273,6 +276,7 @@ rh_table_ret rh_table_delete(rh_table_t *table,const StringView *key) {
 
 rh_table_ret rh_table_resize(rh_table_t *table) {
     assert(table != NULL);
+    assert(rh_table_initialized(table));
 
     // save the original table arrays, they get overridden in realoc
     rh_table_entry_t *old_entries = table->entries;
@@ -310,7 +314,8 @@ rh_table_ret rh_table_resize(rh_table_t *table) {
 
 void rh_table_clear(rh_table_t *table) {
     assert(table != NULL);
-    
+    assert(rh_table_initialized(table));
+
     for (uint32_t entry_idx = 0; entry_idx < table->capacity; entry_idx++) {
         rh_table_entry_t *entry = table->entries + entry_idx;
         const uint32_t pos = entry->data_index;
@@ -330,9 +335,7 @@ void rh_table_clear(rh_table_t *table) {
 void rh_table_free(rh_table_t *table) {
     assert(table != NULL);
 
-    if (table->entries == NULL || 
-        table->entry_data == NULL || 
-        table->entry_keys == NULL) {
+    if (!rh_table_initialized(table)) {
         return;
     }
 
@@ -364,6 +367,7 @@ void rh_table_free(rh_table_t *table) {
 
 rh_table_iter_t rh_table_iter_init(const rh_table_t *table) {
     assert(table != NULL);
+    assert(rh_table_initialized(table));
 
     // find the first ocuppied table entry
     for (uint32_t entry_idx = 0; entry_idx < table->capacity; entry_idx++) {
@@ -420,6 +424,10 @@ rh_table_iter_ret rh_table_iter_next(rh_table_iter_t *iter) {
     }
 
 static inline rh_table_pos_t __rh_table_find_slot(const rh_table_t *table, uint64_t hash, const StringView *key) {
+    assert(table != NULL);
+    assert(key != NULL);
+    assert(rh_table_initialized(table));
+
     const uint32_t wrap_mask = table->capacity - 1;
     uint32_t pos = hash & wrap_mask;
     uint16_t distance = 0;
@@ -499,6 +507,7 @@ static inline void __rh_table_rehash_insert(rh_table_t *table, const StringView 
     assert(table != NULL);
     assert(key != NULL);
     assert(data != NULL);
+    assert(rh_table_initialized(table));
 
     const uint64_t hash = get_hash(key);
     const uint32_t mask = table->capacity - 1;
@@ -552,6 +561,7 @@ static inline void __rh_table_rehash_insert(rh_table_t *table, const StringView 
 
 static inline void __rh_table_shift_back(rh_table_t *table,uint32_t stating_position) {
     assert(table != NULL);
+    assert(rh_table_initialized(table));
 
     const uint32_t mask = table->capacity - 1;
     uint32_t position = (stating_position + 1) & mask;

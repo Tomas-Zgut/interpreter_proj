@@ -87,6 +87,8 @@ typedef enum
  * @param[in] size: the initial capaciy of the table
  * @param[in] deleter: user provided function to proprerly delete their data
  * 
+ * @warning IF an uninitialized table is provided, there is an assertion
+ * 
  * @returns
  * - `RH_TABLE_ALLOC_FAIL` - in case the allocation fails
  * 
@@ -102,6 +104,8 @@ rh_table_ret rh_table_init_deleter(rh_table_t *table, uint32_t entry_size, uint3
  * @param[out] table: table to initialize
  * @param[in] entry_size: the size of user's data
  * @param[in] size: the initial capaciy of the table
+ * 
+ * @warning IF an uninitialized table is provided, there is an assertion
  * 
  * @returns
  * - `RH_TABLE_ALLOC_FAIL` - in case the allocation fails
@@ -126,6 +130,8 @@ static inline rh_table_ret rh_table_init(rh_table_t *table, uint32_t entry_size,
  * @param[in] key: key to look up
  * @param[out] data_out: where to store the pointer to the found data
  * 
+ * @warning IF an uninitialized table is provided, there is an assertion
+ * 
  * @returns
  * - `RH_TABLE_KEY_NOT_FOUND` - in case the key is not found
 
@@ -145,6 +151,8 @@ rh_table_ret rh_table_look_up(const rh_table_t *table, const StringView *key, vo
  * @param[in] table: pointer to a table
  * @param[in] key: key to insert
  * @param[in,out] data_out: data to insert, after succes pointer to the inserted data
+ * 
+ * @warning IF an uninitialized table is provided, there is an assertion
  * 
  * @returns
  * - `RH_TABLE_TABLE_FULL` - in case the table is full
@@ -167,6 +175,8 @@ rh_table_ret rh_table_insert(rh_table_t *table, const StringView *key, void **da
  * @param table: pointer to a table
  * @param key: key to delete
  * 
+ * @warning IF an uninitialized table is provided, there is an assertion
+ * 
  * @returns
  * - `RH_TABLE_TABLE_EMPTY` - in case the table is emty
  * 
@@ -188,6 +198,8 @@ rh_table_ret rh_table_delete(rh_table_t *table, const StringView *key);
  * 
  * @param table: pointer to a table
  * 
+ * @warning IF an uninitialized table is provided, there is an assertion
+ * 
  * @returns
  * - `RH_TABLE_ALLOC_FAIL` - in case the allocation fails
  * 
@@ -199,11 +211,13 @@ rh_table_ret rh_table_resize(rh_table_t *table);
 
 /**
  * @brief function to clear out a table
- * 
+ *
+ * @par This function calls the user provided function to clean up table data
+ * (if function was provided)
+ *   
  * @param table: pointer to a table
  *
- * @note User data is not clean up, user needs to iterate over 
- * the table to clean up the data.
+ * @warning IF an uninitialized table is provided, there is an assertion
  */
 void rh_table_clear(rh_table_t *table);
 
@@ -217,17 +231,33 @@ void rh_table_clear(rh_table_t *table);
 void rh_table_free(rh_table_t *table);
 
 /**
+ * @brief function to check if the table has been initialized
+ * 
+ * @param table: pointer to a table
+ * 
+ * @returns true if the table has been initialized, false otherwise
+ */
+static inline bool rh_table_initialized(const rh_table_t *table) {
+	assert(table != NULL);
+
+	return table->entry_keys != NULL && table->entry_data != NULL && table->entries != NULL;
+}
+
+/**
  * @brief gettern for the table's size
  * 
  * @par If the user has provided a custom deleter it will be called for each elemet
  * 
  * @param table: pointer to a table
  * 
+ * @warning IF an uninitialized table is provided, there is an assertion
+ * 
  * @returns number of entries in the table
  */
 static inline uint32_t rh_table_size(const rh_table_t *table) {
 	assert(table != NULL);
-	
+	assert(rh_table_initialized(table));
+
 	return table->size;
 }
 
@@ -236,11 +266,14 @@ static inline uint32_t rh_table_size(const rh_table_t *table) {
  * 
  * @param table: pointer to a table
  * 
+ * @warning IF an uninitialized table is provided, there is an assertion
+ * 
  * @returns capacity of a table
  */
 static inline uint32_t rh_table_capacity(const rh_table_t *table) {
 	assert(table != NULL);
-	
+	assert(rh_table_initialized(table));
+
 	return table->capacity;
 }
 
@@ -251,6 +284,8 @@ static inline uint32_t rh_table_capacity(const rh_table_t *table) {
  * for the 1st key value pair in the table
  * 
  * @param table: pointer to a table
+ * 
+ * @warning IF an uninitialized table is provided, there is an assertion
  * 
  * @returns an iterator for a given table
  * 
@@ -335,7 +370,6 @@ static inline void *rh_table_iter_get_data(const rh_table_iter_t *iter) {
  */
 #define RH_TABLE_ITER(iter_name,table) __RH_TABLE_ITER_IMPL(iter_name,table,rh_table_iter_t,__EMTPY,__EMTPY,__EMTPY)
 
-
 /**
  * @brief function to move a soruce table to a new table.
  * 
@@ -351,9 +385,7 @@ static inline void *rh_table_iter_get_data(const rh_table_iter_t *iter) {
  */
 static inline rh_table_t rh_table_move(rh_table_t *src) {
 	assert(src != NULL);
-	assert(src->entries != NULL);
-	assert(src->entry_data != NULL);
-	assert(src->entry_keys != NULL);
+	assert(rh_table_initialized(src));
 
 	rh_table_t new_table;
 	memcpy(&new_table,src,sizeof(rh_table_t));
