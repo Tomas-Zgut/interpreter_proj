@@ -1,7 +1,9 @@
 #include<headders/robin_hood_table.h>
 #include<headders/hashes.h>
 #include<string.h>
-
+#include<stddef.h>
+#include<stdalign.h>
+#include<stdbit.h>
 typedef enum {
     RH_TABLE_SLOT_FOUND_EMPTY,
     RH_TABLE_SLOT_FOUND_KEY,
@@ -13,7 +15,7 @@ typedef struct {
   const rh_table_find_ret result;
 } rh_table_pos_t;
 
-#define CAHCE_LINE_SIZE 64
+#define CACHE_LINE_SIZE 64
 #define ALIGN_ROUND_UP(value,align) ((((value) + ((align)-1)) / align) * align)
 
 #define OCCUPIED_MASK 0x8000
@@ -25,11 +27,6 @@ typedef struct {
 #define HASH_MASK 0x7FFF
 #define MASKED_HASH(x) ((x >> 49) & HASH_MASK)
 
-#define REALLOC_FREE(new,old)   \
-    if ((new) != (old)) {       \
-        free(old);              \
-    }
-
 #define IS_POWER_OF_2(value) (((value) & ((value)-1)) == 0)
 /*
 *************************************************************************
@@ -38,12 +35,14 @@ typedef struct {
 */
 
 /**
- * @brief private function for realocating the table
+ * @brief private function for allocating a table
  * 
- * @par Funcion handles the realoc part of table resizing.
- * If function fails, it has no side effects.
+ * @par Function alocates data for a table with a given size and
+ * initialize the table entries. This function only uses 1 allocation.
  * 
  * @param table: pointer to a table
+ * @param size: size of table to alloc
+ * @param dat_size: size of the user data in the table
  * 
  * @returns
  * - `RH_TABLE_ALLOC_FAIL` - in case the allocation fails
@@ -52,7 +51,7 @@ typedef struct {
  * 
  * @see rh_table_ret
  */
-static inline rh_table_ret __rh_table_realloc(rh_table_t *table);
+static inline rh_table_ret __rh_table_alloc(rh_table_t *table, size_t size, size_t data_size);
 
 /**
  * @brief pirvate function for finding a slot in a table
@@ -107,52 +106,18 @@ rh_table_ret rh_table_init_deleter(rh_table_t *table, uint32_t data_size, uint32
     assert(table != NULL);
 
     if(!IS_POWER_OF_2(size)) {
-        goto invalid_args;
+        return RH_TABLE_INVALID_ARGS;
     }
 
-    const uint64_t alloc_size = ALIGN_ROUND_UP(size*data_size,CAHCE_LINE_SIZE);
-
-    rh_table_entry_t *entries = (rh_table_entry_t *) aligned_alloc(CAHCE_LINE_SIZE,size*sizeof(rh_table_entry_t));
-
-    if (entries == NULL) {
-        goto entry_alloc_err;
-    }
-
-    uint8_t *entry_data = (uint8_t *) aligned_alloc(CAHCE_LINE_SIZE,alloc_size);
-
-    if (entry_data == NULL) {
-        goto entry_data_alloc_err;
-    }
-
-    String *entry_keys = (String *) aligned_alloc(CAHCE_LINE_SIZE,size *sizeof(String));
-
-    if (entry_keys == NULL) {
-        goto entry_key_alloc_err;
-    }
-
-    // initialize entry indexes
-    for (uint32_t entry_idx = 0; entry_idx < size; entry_idx++) {
-        entries[entry_idx].data_index = entry_idx;
-        entries[entry_idx].finger_print = 0;
+    if (__rh_table_alloc(table,size,data_size)!= RH_TABLE_SUCCESS) {
+        return RH_TABLE_ALLOC_FAIL;
     }
 
     table->entry_data_size = data_size;
-    table->entries = entries;
-    table->entry_data = entry_data;
-    table->entry_keys = entry_keys;
     table->capacity = size;
     table->cleanup = deleter;
     table->size = 0;
     return RH_TABLE_SUCCESS;
-
-entry_key_alloc_err:
-    free(entry_data);
-entry_data_alloc_err:
-    free(entries);
-entry_alloc_err:
-    return RH_TABLE_ALLOC_FAIL;
-invalid_args:
-    return RH_TABLE_INVALID_ARGS;
 }
 
 
@@ -284,7 +249,7 @@ rh_table_ret rh_table_resize(rh_table_t *table) {
     String *old_keys = table->entry_keys;
     const uint32_t old_capacity = table->capacity;
 
-    rh_table_ret ret_val = __rh_table_realloc(table);
+    const rh_table_ret ret_val = __rh_table_alloc(table,old_capacity * 2,table->entry_data_size);
 
     if (ret_val != RH_TABLE_SUCCESS) {
         return ret_val;
@@ -304,10 +269,9 @@ rh_table_ret rh_table_resize(rh_table_t *table) {
 
     }     
 
-    free(old_entries);
-    free(old_entry_data);
-    free(old_keys);
 
+    // free the old table arrays
+    free(old_entries);
     return RH_TABLE_SUCCESS;
 }
 
@@ -342,8 +306,6 @@ void rh_table_free(rh_table_t *table) {
     rh_table_clear(table);
 
     free(table->entries);
-    free(table->entry_data);
-    free(table->entry_keys);
 
     table->entry_data = NULL;
     table->entries = NULL;
@@ -454,53 +416,37 @@ static inline rh_table_pos_t __rh_table_find_slot(const rh_table_t *table, uint6
     }
 }
 
-static inline rh_table_ret __rh_table_realloc(rh_table_t *table) {
+static inline rh_table_ret __rh_table_alloc(rh_table_t *table, size_t size, size_t data_size) {
     assert(table != NULL);
 
-    const size_t old_capacity = table->capacity;  
+    const size_t entry_alloc_size = size *sizeof(rh_table_entry_t); // already 8 byte aligned
+    const size_t entry_key_alloc_size = ALIGN_ROUND_UP(size * sizeof(String),alignof(max_align_t));
+    const size_t entry_data_alloc_size = size * data_size; //aligment unknown
+    const size_t table_alloc_size = ALIGN_ROUND_UP(entry_alloc_size + entry_key_alloc_size+entry_data_alloc_size,CACHE_LINE_SIZE);
 
-    //overflow number
-    if (old_capacity == 1ULL << 32) {
-        goto err_overflow;
+    uint8_t *alloced_mem = aligned_alloc(CACHE_LINE_SIZE,table_alloc_size);
+    if (alloced_mem == NULL) {
+        return RH_TABLE_ALLOC_FAIL;
+    }
+    const uintptr_t alloced_address = (uintptr_t) alloced_mem;
+    const uintptr_t entry_address = alloced_address;
+    rh_table_entry_t *entries = (rh_table_entry_t *) entry_address;
+    const uintptr_t key_address = entry_address + entry_alloc_size;
+    String * entry_keys = (String *)key_address;
+    const uintptr_t data_address = key_address + entry_key_alloc_size;
+    uint8_t *entry_data = (uint8_t *)data_address;
+
+    // initialize the  table entries
+    for (uint32_t entry_idx = 0; entry_idx < size; entry_idx++) {
+        entries[entry_idx].data_index = entry_idx;
+        entries[entry_idx].finger_print = 0;
     }
 
-    const size_t new_capacity = old_capacity * 2;
-
-    rh_table_entry_t *new_entries = (rh_table_entry_t *) aligned_alloc(CAHCE_LINE_SIZE,new_capacity*sizeof(rh_table_entry_t));
-    if (new_entries == NULL) {
-        goto err_entries_alloc;
-    }
-
-    uint8_t *new_entry_data = (uint8_t *) aligned_alloc(CAHCE_LINE_SIZE,new_capacity*table->entry_data_size);
-    if (new_entry_data == NULL) {
-        goto err_entry_data_alloc;
-    }
-
-    String *new_entry_keys = (String * ) aligned_alloc(CAHCE_LINE_SIZE,new_capacity*sizeof(String));
-    if (new_entry_keys == NULL) {
-        goto err_entry_keys_alloc;
-    }
-
-    // initialize the new set of indexes
-    for (uint32_t entry_idx = 0; entry_idx < new_capacity; entry_idx++) {
-        new_entries[entry_idx].data_index = entry_idx;
-        new_entries[entry_idx].finger_print = 0;
-    }
-
-    table->entry_data = new_entry_data;
-    table->entries = new_entries;
-    table->capacity = new_capacity;
-    table->entry_keys = new_entry_keys;
-
+    table->entry_data = entry_data;
+    table->entries = entries;
+    table->entry_keys = entry_keys;
+    table->capacity = size;
     return RH_TABLE_SUCCESS;
-
-err_entry_keys_alloc:
-    free(new_entry_data);
-err_entry_data_alloc:
-    free(new_entries);
-err_entries_alloc:
-err_overflow:
-    return RH_TABLE_ALLOC_FAIL;
 }
 
 static inline void __rh_table_rehash_insert(rh_table_t *table, const StringView *key, const void *data) {
