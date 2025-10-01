@@ -39,7 +39,7 @@ typedef enum
 /**
  * @brief funciotn to initialize a jump table
  *
- * @param table[out]: pointer to a jump table
+ * @param[out] table: pointer to a jump table
  *
  * @returns
  *  - `JUMP_TABLE_SUCCESS` - initialization was succesfull
@@ -56,7 +56,7 @@ static inline jump_table_ret jump_table_init(jump_table_t *table)
 /**
  * @brief funciotn to find a jump_destiantion in a table
  *
- * @param table[in]: pointer to a jump table
+ * @param table: pointer to a jump table
  * @param jump_label: label to where the jump points to
  *
  * @returns on success pointer to a jump table entry, on fail NULL
@@ -78,9 +78,9 @@ static inline jump_table_entry_t *jump_table_lookup(const jump_table_t *table, c
  * @par Function tries to insert into a jump table.If the table is too small it tries to resize and than
  * reinserts the jump destination. If function succeeds the `out` parameter points to inserted data
  *
- * @param table[in]: pointer to a table
- * @param jump_label[in]: lable where to jump
- * @param out[in,out]: data to insert, points to inserted data on success
+ * @param[in] table: pointer to a table
+ * @param[in] jump_label: lable where to jump
+ * @param[in,out] out: data to insert, points to inserted data on success
  *
  * @returns
  *  - `jUMP_TABLE_SUCCESS` - insert was successful, out points to inserted data

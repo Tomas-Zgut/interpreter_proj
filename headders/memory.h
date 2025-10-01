@@ -66,24 +66,24 @@ uint32_t *memory_call_stack_pop(Memory *memory);
  * @par Function returns a NULL pointer it the variable is not in the temp frame 
  *  
  * @param memory: pointer to the interpreter's memory
- * @param varaible_name: variable to look up
+ * @param variable_name: variable to look up
  * 
  * @returns const pointer to data in memory on success, false otherwise
  * 
  * @warning there is an assertion if the temp frame is not valid @see memry_is_temp_frame_valid
  */
-const memory_value_t *memory_temp_frame_get(const Memory *memory,const StringView *varaible_name);
+const memory_value_t *memory_temp_frame_get(const Memory *memory,const StringView *variable_name);
 /**
  * @brief fucntion to get a const reference to a variable from the global frame
  * 
  * @par Function returns a NULL pointer it the variable is not in the global memory frame 
  * 
  * @param memory: pointer to the interpreter's memory
- * @param varaible_name: variable to look up
+ * @param variable_name: variable to look up
  * 
  * @returns const pointer to data in memory on success, false otherwise
  */
-const memory_value_t *memory_global_frame_get(const Memory *memory,const StringView *varaible_name);
+const memory_value_t *memory_global_frame_get(const Memory *memory,const StringView *variable_name);
 
 /**
  * @brief fucntion to get a const reference to a variable from the top local frame
@@ -91,7 +91,7 @@ const memory_value_t *memory_global_frame_get(const Memory *memory,const StringV
  * @par Function returns a NULL pointer it the variable is not in the top local frame 
  *  
  * @param memory: pointer to the interpreter's memory
- * @param varaible_name: variable to look up
+ * @param variable_name: variable to look up
  * 
  * @returns const pointer to data in memory on success, false otherwise
  * 
@@ -105,7 +105,7 @@ const memory_value_t *memory_local_frame_get(const Memory *memory, const StringV
  * @par Function returns a NULL pointer it the variable is not in the temp frame 
  *  
  * @param memory: pointer to the interpreter's memory
- * @param varaible_name: variable to look up
+ * @param variable_name: variable to look up
  * 
  * @returns pointer to data in memory on success, false otherwise
  * 
@@ -119,7 +119,7 @@ memory_value_t *memory_temp_frame_get_mut(const Memory *memory, const StringView
  * @par Function returns a NULL pointer it the variable is not in the global frame 
  *  
  * @param memory: pointer to the interpreter's memory
- * @param varaible_name: variable to look up
+ * @param variable_name: variable to look up
  * 
  * @returns pointer to data in memory on success, false otherwise
  */
@@ -131,7 +131,7 @@ memory_value_t *memory_global_frame_get_mut(const Memory *memory, const StringVi
  * @par Function returns a NULL pointer it the variable is not in the top local frame 
  *  
  * @param memory: pointer to the interpreter's memory
- * @param varaible_name: variable to look up
+ * @param variable_name: variable to look up
  * 
  * @returns const pointer to data in memory on success, false otherwise
  * 
@@ -231,8 +231,6 @@ bool memory_local_frame_create(Memory *memory);
  * @brief fuction moves the top local frame into the temporary frame (old temporary frame is discarded)
  * 
  * @param memory: pointer to the interpretr's memory
- * 
- * @returns true on success, false otherwise
  * 
  * @warning if there are no local frames available there is an assertion @see memory_local_frame_valid
  */

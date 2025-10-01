@@ -4,40 +4,57 @@
 #include "opcodes.h"
 #include "string_buffer.h"
 #include <stdint.h>
+/**
+ * @brief enum for types of tokens
+ */
 typedef enum {
-	TOKEN_INSTRUCTION,
-	TOKEN_INT,
-	TOKEN_STRING,
-	TOKEN_BOOL,
-	TOKEN_NIL,
-	TOKEN_VARIABLE,
-	TOKEN_LABEL,
-	TOKEN_TYPE,
-	TOKEN_UNKNOWN,
-	TOKEN_EOF,
+	TOKEN_INSTRUCTION,	// token for instructions
+	TOKEN_INT,			// token for integer literals
+	TOKEN_STRING,		// token for string literals
+	TOKEN_BOOL,			// token for boolean literals
+	TOKEN_NIL,			// token for nill literals
+	TOKEN_VARIABLE,		// token for varaible names
+	TOKEN_LABEL,		// token for labels
+	TOKEN_TYPE,			// token for the data type
+	TOKEN_UNKNOWN,		// unknown token
+	TOKEN_EOF,			// singaling end of file
 } token_type;
 
+/**
+ * @brief enum for frames where varaibles are located
+ */
 typedef enum {
-	GF,
-	LF,
-	TF,
+	GF,	// global frame
+	LF,	// local frame
+	TF,	// temoporary frame
 } frame_type;
 
+/**
+ * @brief struct storing data for a variable name
+ */
 typedef struct {
-	String var_name;
-	frame_type var_frame;
+	frame_type var_frame;	// frame where varaible is from	
+	String var_name;		// name of the varaible
 } variable_t;
 
+/**
+ * @brief union for storing value of a token
+ */
 typedef union {
-	String string_val;
-	uint64_t int_val;
-	variable_t var_data;
-	opcode_type ins_opcode;
+	String string_val;		// string literal
+	uint64_t int_val;		// integer literal
+	bool boolean_val;		// boolean literal
+	double double_val;		// doube literal
+	variable_t var_data;	// data for a variable
+	opcode_type ins_opcode;	// opcode of an intruction
 } token_value_t;
 
+/**
+ * @brief struct representing a token
+ */
 typedef struct {
-	token_type type;
-	token_value_t value;
+	token_type type;		// type of a token
+	token_value_t value;	// value of a token
 } token_t;
 
 /**
@@ -58,8 +75,8 @@ void token_free(token_t *token);
  * 
  * @warning Calling this function more than once on a given src_token triggers an assertion
  * 
- * @param src_token[in]: source token that transfers data ownership
- * @param dest_token[out]: destination token that receives the data ownership
+ * @param[in] src_token: source token that transfers data ownership
+ * @param[out] dest_token: destination token that receives the data ownership
  */ 
 void token_move(token_t * src_token, token_t* dest_token);
 #endif

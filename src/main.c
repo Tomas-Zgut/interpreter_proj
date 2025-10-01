@@ -1,6 +1,10 @@
 #include<headders/parser.h>
 #include <string.h>
-
+/**
+ * @brief Function that prints the help message of the program
+ * 
+ * @param program_name: name of the program
+ */
 void print_help(const char* program_name) {
 	printf("This is an interpreter program\n");
 	printf("Program interprets code in a provided [file].\n");
@@ -10,11 +14,20 @@ void print_help(const char* program_name) {
 	printf("\t -h, --help:\tDisplays this message\n");
 }
 
+/**
+ * @brief struct representing the command line configuration of the program
+ */
 typedef struct {
-	FILE* file;
+	FILE* file; // file to parse
 } setup_t;
 
-
+/**
+ * @brief Function to parse the command line arguments of the program
+ * 
+ * @param config: pointer to the program config
+ * @param argc: number of program cmd line arguments
+ * @param argv: array of program arugments
+ */
 int parse_args(setup_t *config,int argc, const char *argv[]) {
 	if (argc > 2) {
 		fprintf(stderr,"Invalid number of parameters!\n");
@@ -95,7 +108,14 @@ void process_tokens(LexerContext *ctx) {
 	printf("Finished processing tokens.\n");
 }
 
-
+/**
+ * @brief main function of the program
+ * 
+ * @param argc: number cmd line arguments
+ * @param argv: array of cmd line arguments
+ * 
+ * @returns exit code of the program
+ */
 int main(int argc, const char* argv[]) {
 	setup_t config;
 	int ret = parse_args(&config,argc,argv);

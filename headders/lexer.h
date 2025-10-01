@@ -73,7 +73,7 @@ bool is_instruction(const StringView *buff);
 /**
  * @brief function to check if the input contains a label
  *
- * @param bufff: input string
+ * @param buff: input string
  *
  * @returns true if the input is an label, false otherwise.
  */
@@ -82,7 +82,7 @@ bool is_label(const StringView *buff);
 /**
  * @brief function to check if the input is a literal
  *
- * @param bufff: input string
+ * @param buff: input string
  *
  * @returns true if the input is an literal, false otherwise.
  */
@@ -95,12 +95,11 @@ bool is_literal(const StringView *buff);
  * it modifies the token parameter and returns true. If not the token
  * parametr has undefined value and it returns false.
  *
- * @param buff[in]: string to containing a variable name
- * @param token[out]: token data
+ * @param[in] buff: string to containing a variable name
+ * @param[out] token: token data
  *
  * @return true on success, false otherwise.
  *
- * @todo implement
  */
 bool lex_variable(const StringView *buff, token_t *token);
 
@@ -111,8 +110,8 @@ bool lex_variable(const StringView *buff, token_t *token);
  * it modifies the token parameter and returns true. If not the token
  * parametr has undefined value and it returns false.
  *
- * @param buff[in]: string to containing a literal
- * @param token[out]: token data
+ * @param[in] buff: string to containing a literal
+ * @param[out] token: token data
  *
  * @return true on success, false otherwise.
  *
@@ -127,12 +126,11 @@ bool lex_literal(const StringView *buff, token_t *token);
  * it modifies the token parameter and returns true. If not the token
  * parametr has undefined value and it returns false.
  *
- * @param buff[in]: string to containing an  instrunction
- * @param token[out]: token data
+ * @param[in] buff: string to containing an  instrunction
+ * @param[out] token: token data
  *
  * @return true on success, false otherwise.
  *
- * @todo implement
  */
 bool lex_instruction(const StringView *buff, token_t *token);
 
@@ -143,17 +141,18 @@ bool lex_instruction(const StringView *buff, token_t *token);
  * it modifies the token parameter and returns true. If not the token
  * parametr has undefined value and it returns false.
  *
- * @param buff[in]: string to containing a label
- * @param token[out]: token data
+ * @param[in] buff: string to containing a label
+ * @param[out] token: token data
  *
  * @return true on success, false otherwise.
  *
- * @todo implement
  */
 bool lex_label(const StringView *buff, token_t *token);
 
 /**
  * @brief function to deal with tokens (might not be used)
+ * 
+ * @param buff: string contatining a comment
  */
 void lex_commnet(const StringView *buff);
 #endif

@@ -1,13 +1,24 @@
 #include<headders/memory_value.h>
 #include<assert.h>
 
+/**
+ * @brief Macro for creating a StrigView from @p lit
+ * 
+ * @param lit: string literal to put into a StringView
+ * 
+ * @returns a new StringView holding @p lit
+ * 
+ * @see StringView
+ */
 #define MAKE_VIEW(lit)          \
     (StringView) {              \
         .data = lit,            \
         .length = sizeof(lit)-1 \
     }
-
-const StringView type_strings[] = {
+/**
+ * @brief list of type strings
+ */
+static const  StringView type_strings[] = {
         MAKE_VIEW("bool"),
         MAKE_VIEW("float"),
         MAKE_VIEW("int"),
@@ -16,18 +27,30 @@ const StringView type_strings[] = {
         MAKE_VIEW("undefined")
     };
 
+/**
+ * @brief Macro for creating a type string
+ * 
+ * @param idx: index that is passed into a type string
+ * 
+ * @returns a new type string
+ */
 #define MAKE_TYPE_STRING(idx)   \
     (type_string) {             \
         .type_str_idx = idx     \
     }    
 
+/**
+ * @brief enum holding the indexes of type strings in `type_strings`
+ * 
+ * @see type_strings
+ */
 typedef enum {
-    BOOL_IDX,
-    DOUBLE_IDX,
-    INT_IDX,
-    STRING_IDX,
-    NILL_IDX,
-    UNDEFINED_IDX,
+    BOOL_IDX,       // index of `bool` type string
+    DOUBLE_IDX,     // index of `double` type string
+    INT_IDX,        // index of `integer` type string
+    STRING_IDX,     // index of `string` type string
+    NILL_IDX,       // index of `nill` type string
+    UNDEFINED_IDX,  // index of `undefined` type string
 } type_string_idxs;
 
 

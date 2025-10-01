@@ -13,7 +13,7 @@ typedef struct {
     const int8_t failed_arg;    // which arg failed to pass
 } arg_type_check_t;
 
-#define ALL_ARGS_VALID -1
+#define ALL_ARGS_VALID -1 // all intruction arguments are valid
 
 /**
  * @brief function to check if given argument list is valid for a given instruction

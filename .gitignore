@@ -4,3 +4,4 @@ ipp_interpret
 tests/test_runner.h
 tests/valgrind_out.txt
 coverage/*
+doc

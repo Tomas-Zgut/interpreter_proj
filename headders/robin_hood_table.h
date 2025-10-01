@@ -59,13 +59,13 @@ typedef struct
  * table functions
  */
 typedef enum {
-	RH_TABLE_ALLOC_FAIL,
-	RH_TABLE_SUCCESS,
-	RH_TABLE_TABLE_FULL,
-	RH_TABLE_TABLE_EMPTY,
-	RH_TABLE_KEY_FOUND,
-	RH_TABLE_KEY_NOT_FOUND,
-	RH_TABLE_INVALID_ARGS
+	RH_TABLE_ALLOC_FAIL,	// returned if allocation fails
+	RH_TABLE_SUCCESS,		// returned if a table function succeeds
+	RH_TABLE_TABLE_FULL,	// returned if the table is full
+	RH_TABLE_TABLE_EMPTY,	// returned if the table is empty
+	RH_TABLE_KEY_FOUND,		// returned if key is found
+	RH_TABLE_KEY_NOT_FOUND,	// returned if key is not found
+	RH_TABLE_INVALID_ARGS	// returned if talbe construcor got invalid args
 } rh_table_ret;
 
 
@@ -75,8 +75,8 @@ typedef enum {
  */
 typedef enum
 {
-	RH_TABLE_ITER_NEXT,
-	RH_TABLE_ITER_END,
+	RH_TABLE_ITER_NEXT, // there are more items
+	RH_TABLE_ITER_END,	// iteration ended
 } rh_table_iter_ret;
 
 /**
@@ -91,6 +91,8 @@ typedef enum
  * 
  * @returns
  * - `RH_TABLE_ALLOC_FAIL` - in case the allocation fails
+ * 
+ * - `RH_TABLE_INVALID_ARGS` - in case the arguments are not valid
  * 
  * - `RH_TABLE_SUCCESS` - in case the function succeeds
  * 
@@ -109,6 +111,8 @@ rh_table_ret rh_table_init_deleter(rh_table_t *table, uint32_t entry_size, uint3
  * 
  * @returns
  * - `RH_TABLE_ALLOC_FAIL` - in case the allocation fails
+ * 
+ * - `RH_TABLE_INVALID_ARGS` - in case the arguments are not valid
  * 
  * - `RH_TABLE_SUCCESS` - in case the function succeeds
  * 

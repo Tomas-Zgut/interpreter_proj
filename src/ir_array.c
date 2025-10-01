@@ -13,8 +13,8 @@
  * grow the array up to the specified size. If the allocation fails,
  * the orignal data is not lost, and will need to be freed.
  * 
- * @param array[out]: pointer to an array
- * @param size[in]: new size of the array
+ * @param[out] array: pointer to an array
+ * @param[in] size: new size of the array
  * 
  * @returns true if the allocation was successful, false otherwise
  */

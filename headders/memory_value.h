@@ -1,35 +1,50 @@
 #ifndef __MEMORY_VALUE_H__
 #define __MEMORY_VALUE_H__
 #include "string_buffer.h"
+/**
+ * @brief struct representing the `nill` type
+ */
 typedef struct
 {
-	char _unused;
+	char _unused; // unused, because nill only has 1 value
 } nill_t;
 
 DEFINE_OPTIONAL(nill_t,nill)
+
+/**
+ * @brief struct representing the `type_string` type
+ */
 typedef struct 
 {
-	uint8_t type_str_idx;
+	uint8_t type_str_idx; // index of a type string for a given type in a lookup array
 }type_string;
 
+/**
+ * @brief struct representing the `udnefined` type
+ */
 typedef struct 
 {
-	char _unused;
+	char _unused; // unused, because undefined has only 1 value
 }undefined_t;
 
-
+/**
+ * @brief union for storing a dynamic value in memory
+ */
 typedef union
 {
-	StringMut str_value;
-	String str_lit_value;
-	type_string type_str_value;
-	bool bool_value;
-	int64_t int_value;
-	double decimal_value;
-	nill_t nill_value;
-	undefined_t undef_value;
+	StringMut str_value;		// value of `string` type
+	String str_lit_value;		// value of string literal type
+	type_string type_str_value;	// value of `type_string` type
+	bool bool_value;			// value of `bool` type
+	int64_t int_value;			// value of `integer` type
+	double decimal_value;		// value of `double` type
+	nill_t nill_value;			// value of `nill` type
+	undefined_t undef_value;	// value of `type_string` type
 } value_t;
 
+/**
+ * @brief enum holding the current type of a dynamic value
+ */
 typedef enum
 {
 	VALUE_UNDEFINED,			// undefnied value
@@ -43,10 +58,16 @@ typedef enum
 	VALUE_NILL = 0b10000,		// nil is stored
 } value_type;
 
+/**
+ * @brief sturct for storing a dynamic value in memory
+ * 
+ * @see value_type
+ * @see value
+ */
 typedef struct
 {
-	value_t value;
-	value_type type;
+	value_type type;	// current type of dymanic value
+	value_t value;		// current value of dynamic value
 } memory_value_t;
 
 
@@ -243,7 +264,8 @@ StringView memory_value_get_string(const memory_value_t *value);
  * if possible. If the stored data is a type string there is a copy,
  * otherwise the data is move into @p out.
  * 
- * @param value: pointer to a memory value
+ * @param[out] out: pointer to a mutable string
+ * @param[in] value: pointer to a memory value
  * 
  * @warning If the stored value is not a string type there is an assertion
  * 
@@ -311,8 +333,8 @@ static inline memory_value_t memory_value_move(memory_value_t *mem_val) {
 /**
  * @brief function to copy the data from @p val to @p out
  * 
- * @param out[out]: pointer to the destinaion of the copy
- * @param val[in]: source fro the copy
+ * @param[out] out: pointer to the destinaion of the copy
+ * @param[in] val: source fro the copy
  * 
  * @returns true if the copy was successful, false otherwise
  */
