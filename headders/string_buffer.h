@@ -97,8 +97,8 @@ typedef struct {
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
  * - String -> owning immutable string type @see String
  *
- * @param out[out] - destination for the copy
- * @param buff[in] - buffer to copy (type dependent)
+ * @param[out] out - destination for the copy
+ * @param[in] buff - buffer to copy (type dependent)
  *
  * @returns true if copying was succesfull, false otherwise
  *
@@ -122,8 +122,8 @@ typedef struct {
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
  * - String -> owning immutable string type @see String
  *
- * @param out[out] - destination for the copy
- * @param buff[in] - buffer to copy (type dependent)
+ * @param[out] out - destination for the copy
+ * @param[in] buff - buffer to copy (type dependent)
  *
  * @returns true if copying was succesfull, false otherwise
  *
@@ -148,8 +148,8 @@ typedef struct {
  * 
  * @param buff: string to free (type dependent)
  * 
- * @see__sb_free
- * @see _sd_free
+ * @see __sb_free
+ * @see __sd_free
  */
 #define sb_free(buff)		\
 	_Generic((buff), 		\
@@ -254,9 +254,9 @@ typedef struct {
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
  * - String -> owning immutable string type @see String
  * 
- * @param out[out]: immutable srting @see String
- * @param buff1[in]: string to concat (type dependent)
- * @param buff2[in]: string to concat (type dependent)
+ * @param[out] out: immutable srting @see String
+ * @param[in] buff1: string to concat (type dependent)
+ * @param[in] buff2: string to concat (type dependent)
  * 
  * @returns true if concatenations was succesful, false otherwise.
  * 
@@ -282,9 +282,9 @@ typedef struct {
  * - StringMut  -> mutable string type @see StringMut
  * - StringVeiw -> non owning immutable view into a buffer @see StringView
  * - String -> owning immutable string type @see String
- * @param out[out]: mutable srting @see StringMut
- * @param buff1[in]: string to concat (type dependent)
- * @param buff2[in]: string to concat (type dependent)
+ * @param[out] out: mutable srting @see StringMut
+ * @param[in] buff1: string to concat (type dependent)
+ * @param[in] buff2: string to concat (type dependent)
  * 
  * @returns true if concatenations was succesful, false otherwise.
  * 
@@ -357,7 +357,7 @@ void sb_reset(StringMut *buf);
  *
  * @param buff: raw string
  * @param buff_len: lenght of the raw string
- * @param offest: offset into the raw string where the substring starts
+ * @param offset: offset into the raw string where the substring starts
  * @param len: lenght of the substring
  *
  * @note This function should not be used @see sb_get_substring
@@ -369,7 +369,7 @@ StringView __sb_get_substring_impl(const char *buff, size_t buff_len, size_t off
 /**
  * @brief Funcion frees a string type
  *
- * @param buff: buffer to free
+ * @param buf: buffer to free
  *
  * @note This function should not be used @see sb_free
  */
@@ -387,9 +387,9 @@ void __sd_free(String *buff);
 /**
  * @brief Function implements creating an immutable copy of a raw string
  *
- * @param out[out]: destination for the copy
- * @param buff[in]: raw string
- * @param buff_len[in]: length of raw string
+ * @param[out] out: destination for the copy
+ * @param[in] buff: raw string
+ * @param[in] buff_len: length of raw string
  *
  * @note This function should not be used @see sb_copy
  *
@@ -400,9 +400,9 @@ bool __sb_copy_impl(String *out, const char *buff, size_t buff_len);
 /**
  * @brief This function imlpements creating a mutable copy of a raw string
  *
- * @param out[out]: destination for the copy
- * @param buff[in]: raw string
- * @param buff_len[in]: length of raw string
+ * @param[out] out: destination for the copy
+ * @param[in] buff: raw string
+ * @param[in] buff_len: length of raw string
  *
  * @note This funstion should not be used @see sb_copy_mut
  *
@@ -430,9 +430,9 @@ static inline char __sb_get_char_at_impl(const char *buff, size_t index) {
 /**
  * @brief Function appends a raw string to a mutable string
  * 
- * @param out[out]: mutable srting @see StringMut
- * @param buff[in]: raw string  to append
- * @param buff_len[in]: length of raw string 
+ * @param[out] out: mutable srting @see StringMut
+ * @param[in] buff: raw string  to append
+ * @param[in] buff_len: length of raw string 
  * 
  * @note Function should not be used @see sb_append_string
  * 
@@ -443,11 +443,11 @@ bool __sb_append_string_impl(StringMut *out, const char *buff, size_t buff_len);
 /**
  * @brief Function concatenates 2 raw strings into an immutable string
  * 
- * @param out[out]: immutable srting @see String
- * @param buff1[in]: raw string to concatenate
- * @param buff_len1[in]: length of 1st raw string
- * @param buff2[in]: raw string to concatenate
- * @param buff_len2[in]: lenth of 2nd raw string
+ * @param[out] out: immutable srting @see String
+ * @param[in] buff1: raw string to concatenate
+ * @param[in] buff_len1: length of 1st raw string
+ * @param[in] buff2: raw string to concatenate
+ * @param[in] buff_len2: lenth of 2nd raw string
  * 
  * @note Function should not be used @see sb_concat
  * 
@@ -458,11 +458,11 @@ bool __sb_concat_impl(String *out, const char *buff1, size_t buff_len1, const ch
  /**
  * @brief Function concatenates 2 raw strings into a mutable string
  * 
- * @param out[out]: mutable srting @see StringMut
- * @param buff1[in]: raw string to concatenate
- * @param buff_len1[in]: length of 1st raw string
- * @param buff2[in]: raw string to concatenate
- * @param buff_len2[in]: lenth of 2nd raw string
+ * @param[out] out: mutable srting @see StringMut
+ * @param[in] buff1: raw string to concatenate
+ * @param[in] buff_len1: length of 1st raw string
+ * @param[in] buff2: raw string to concatenate
+ * @param[in] buff_len2: lenth of 2nd raw string
  * 
  * @note Function should not be used @see sb_concat_mut
  * 

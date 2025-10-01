@@ -5,28 +5,38 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define INT_PREFIX "int"
-#define NIL_PREFIX "nil"
-#define BOOL_PREFIX "bool"
-#define STRING_PREFIX "string"
+#define INT_PREFIX "int" 		// prefeix for int literals
+#define NIL_PREFIX "nil"		// prefix for nill literals
+#define BOOL_PREFIX "bool"		// prefix for bool lierals
+#define STRING_PREFIX "string"	// prefix for string lierals
 
-#define INT_LIT_SEP_OFFSET 3
-#define STRING_LIT_SEP_OFFSET 6
-#define BOOL_LIT_SEP_OFFSET 4
-#define NIL_LIT_SEP_OFFSET 3
-#define VAR_FRAME_SEP_OFFSET 2
+#define INT_LIT_SEP_OFFSET 3	// offset of separator in int literals
+#define STRING_LIT_SEP_OFFSET 6	// offset of separator in string literals
+#define BOOL_LIT_SEP_OFFSET 4	// offset of separator in bool literals
+#define NIL_LIT_SEP_OFFSET 3	// offset of separator in nill literals
+#define VAR_FRAME_SEP_OFFSET 2	// offset of separator in varaible names
 
+/**
+ * @brief struct mapping instruction opcode to its string representation
+ */
 typedef struct {
-	opcode_type opcode;
-	char ins_name[12];
+	const opcode_type opcode;
+	const char ins_name[12];
 } ins_data_t;
-
+/**
+ * @brief struct representing range of indexes
+ */
 typedef struct {
-	int8_t start;
-	int8_t end;
+	const int8_t start;	// start of the index range
+	const int8_t end;	// end of the index range
 } ins_data_indexes;
 
-static ins_data_t instruction_map[] = {
+/** 
+ * @brief mapping of instruction opcodes to their strings
+ * 
+ * @see ins_data_t
+*/
+static const ins_data_t instruction_map[] = {
 	{INS_LT, "LT"},
 	{INS_GT, "GT"},
 	{INS_EQ, "EQ"},
@@ -64,7 +74,12 @@ static ins_data_t instruction_map[] = {
 	{INS_CREATE_F, "CREATEFRAME"},
 };
 
-static ins_data_indexes ins_index_map[] = {
+/**
+ * @brief mapping of length of a string to indexes in `instruction_map`
+ * 
+ * @see ins_data_indexes
+ */
+static const ins_data_indexes ins_index_map[] = {
 	{-1, -1}, {-1, -1}, {0, 4},	 {4, 9}, {9, 17}, {17, 21},
 	{21, 26}, {26, 29}, {29, 31}, {31, 34}, {-1, -1}, {35, 36},
 };
@@ -401,7 +416,6 @@ bool is_instruction(const StringView *buff) {
 	return lookup_insturction(buff) != INS_UNKNOWN;
 }
 
-/* @todo implement */
 bool lex_variable(const StringView *buff, token_t *token) {
 	assert(is_variable(buff)); // Předpokládáme, že funkce is_variable již
 							   // proběhla
@@ -430,7 +444,6 @@ bool lex_variable(const StringView *buff, token_t *token) {
 	return true;
 }
 
-/* @todo implement */
 bool lex_literal(const StringView *buff, token_t *token) {
 	assert(is_literal(buff)); // Předpokládáme, že funkce is_literal již proběhla
 
@@ -481,7 +494,6 @@ bool lex_literal(const StringView *buff, token_t *token) {
 	return true;
 }
 
-/* @todo implement */
 bool lex_instruction(const StringView *buff, token_t *token) {
 	assert(is_instruction(buff));
 	
@@ -495,7 +507,6 @@ bool lex_instruction(const StringView *buff, token_t *token) {
 	return true;
 }
 
-/* @todo implement */
 bool lex_label(const StringView *buff, token_t *token) {
 	assert(is_label(buff));
 	

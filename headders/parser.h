@@ -3,6 +3,14 @@
 #include "lexer.h"
 #include "jump_table.h"
 #include "ir_array.h"
+
+/**
+ * @brief struct for storing data of a parser
+ * 
+ * @see LexerContext
+ * @see jump_table_t
+ * @see ir_array
+ */
 typedef struct
 {
 	LexerContext lex_ctx;	 // context for lexer
@@ -10,14 +18,17 @@ typedef struct
 	ir_array ir;			 // array containing the ir of the program
 } Parser;
 
+/**
+ * @brief enum of return values from parser functions
+ */
 typedef enum
 {
-	PARSER_MEM_ERR,
-	PARSER_SUCCESS,
-	PARSER_INVALID_TOKEN,
-	PARSER_INVALID_INS_ARGS,
-	PARSER_PROGRAM_END,
-	PARSER_DUPLICATE_LABEL,
+	PARSER_MEM_ERR,				// returned on memory error
+	PARSER_SUCCESS,				// returned on success
+	PARSER_INVALID_TOKEN,		// returned if an invalid token is found
+	PARSER_INVALID_INS_ARGS,	// returned if arugments of an instruction are not valid
+	PARSER_PROGRAM_END,			// returned if the program's src ends
+	PARSER_DUPLICATE_LABEL,		// returned if duplicate label is found
 } parser_ret;
 
 /**
@@ -60,6 +71,8 @@ parser_ret parser_parse_file(Parser *parser);
  * @brief function stores a lable in the jump table
  * 
  * @param parser: pointer to a parser
+ * @param opcode: opcode of a label inctruction
+ * @param operand_tokens: array of operand tokens
  * 
  * @returns 
  * - `PARSER_SUCCESS` if the store was successfull

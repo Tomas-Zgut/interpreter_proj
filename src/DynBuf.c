@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SB_DEFAULT_INITIAL_CAPACITY 16
+#define SB_DEFAULT_INITIAL_CAPACITY 16 // default capacity of StrigMut
 
 bool sb_init(StringMut *buf, size_t initial_capacity) {
 	if (initial_capacity == 0) {

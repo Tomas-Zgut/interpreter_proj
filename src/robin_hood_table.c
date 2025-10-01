@@ -4,29 +4,71 @@
 #include<stddef.h>
 #include<stdalign.h>
 #include<stdbit.h>
-typedef enum {
-    RH_TABLE_SLOT_FOUND_EMPTY,
-    RH_TABLE_SLOT_FOUND_KEY,
-    RH_TABLE_SLOT_FOUND_STEAL
-} rh_table_find_ret;
 
+/**
+ * @brief enum for representing the result of the table lookup
+ */
+typedef enum {
+    RH_TABLE_SLOT_FOUND_EMPTY,  // free slot found
+    RH_TABLE_SLOT_FOUND_KEY,    // key found
+    RH_TABLE_SLOT_FOUND_STEAL   // key not found
+} rh_table_find_ret;
+/**
+ * @brief struct for storing table lookup results
+ */
 typedef struct {
-  const uint32_t pos;
-  const rh_table_find_ret result;
+  const uint32_t pos;               // positoin in the table
+  const rh_table_find_ret result;   // result of lookup
 } rh_table_pos_t;
 
-#define CACHE_LINE_SIZE 64
-#define ALIGN_ROUND_UP(value,align) ((((value) + ((align)-1)) / align) * align)
+#define CACHE_LINE_SIZE 64 // size of a cache line
 
-#define OCCUPIED_MASK 0x8000
+/**
+ * @brief Macro rounds up and aligns @p value to a specified @p align
+ * 
+ * @param value: value to align
+ * @param align: new alignment of a @p value
+ * 
+ * @returns @p value aligned to @p align
+ */
+#define ALIGN_ROUND_UP(value,align) ((((value) + ((align)-1)) / align) * align) //
 
+#define OCCUPIED_MASK 0x8000 // mask representing occupied slot
+
+/**
+ * @brief Macro for checking if a given @p slot is empty
+ * 
+ * @param slot: slot of the table to check
+ * 
+ * @returns true if @p slot if empty, false otherwise
+ */
 #define SLOT_EMPTY(slot) (((slot) & OCCUPIED_MASK) == 0)
 
+/**
+ * @brief Macro for setting a @p slot to empty
+ * 
+ * @param[out] slot: slot to set to empty 
+ */
 #define SET_SLOT_EMPTY(slot) slot &= ~OCCUPIED_MASK;
 
-#define HASH_MASK 0x7FFF
-#define MASKED_HASH(x) ((x >> 49) & HASH_MASK)
+#define HASH_MASK 0x7FFF // mask for extracting the hash
 
+/**
+ * @brief Macro for extracting a fingerprint from @p hash
+ * 
+ * @param hash: hash to extract fingerprint from
+ * 
+ * @returns fingerprint of @p hash
+ */
+#define MASKED_HASH(hash) ((hash >> 49) & HASH_MASK) 
+
+/**
+ * @brief Macro checks if @p value is a power of 2
+ * 
+ * @param value: value to check
+ * 
+ * @returns true if @p value is a power of 2, false otherwise
+ */
 #define IS_POWER_OF_2(value) (((value) & ((value)-1)) == 0)
 /*
 *************************************************************************

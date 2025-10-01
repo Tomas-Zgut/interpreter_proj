@@ -7,8 +7,8 @@
 /**
  * @brief Macro that defines a given stack
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
  */
 #define __DEFINE_STACK_STRUCT(TYPE, NAME) \
 	typedef struct                        \
@@ -24,8 +24,8 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
 /**
  * @brief Macro that defines an init function for a stack type
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
  */
 #define __DEFINE_STACK_INIT(TYPE, NAME)                                  		\
 	static inline bool NAME##_stack_init(NAME##_stack_t *s, uint32_t capacity) 	\
@@ -43,9 +43,9 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
 /**
  * @brief Macro that defines a cleanup function for a stack type
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
- * @param cleanup: function to call on each element on the stack as it is freed
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
+ * @param CLEANUP: function to call on each element on the stack as it is freed
  */
 #define __DEFINE_STACK_FREE(TYPE, NAME, CLEANUP)				\
 	static inline void NAME##_stack_free(NAME##_stack_t *s)		\
@@ -64,8 +64,8 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
 /**
  * @brief Macro that defines a push function for a stack type
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
  */
 #define __DEFINE_STACK_PUSH(TYPE, NAME, PTR, REF)                               \
 	static inline bool NAME##_stack_push(NAME##_stack_t *s, TYPE PTR value) 	\
@@ -89,8 +89,8 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
 /**
  * @brief Macro that defines a top function for a stack type
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
  */
 #define __DEFINE_STACK_TOP(TYPE, NAME)                            			\
 	static inline const TYPE *NAME##_stack_top(const NAME##_stack_t *s)		\
@@ -105,8 +105,8 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
 /**
  * @brief Macro that defines a top function for a stack type
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
  */	
 #define __DEFINE_STACK_TOP_MUT(TYPE, NAME)								\
 	static inline TYPE *NAME##_stack_top_mut(const NAME##_stack_t *s)	\
@@ -122,8 +122,8 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
 /**
  * @brief Macro that defines a pop function for a stack type
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
  */
 #define __DEFINE_STACK_POP(TYPE, NAME)                		\
 	static inline TYPE *NAME##_stack_pop(NAME##_stack_t *s)	\
@@ -140,8 +140,8 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
 /**
  * @brief Macro that defines an empty function for a stack type
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
  */
 #define __DEFINE_STACK_EMPTY(TYPE, NAME)                     		\
 	static inline bool NAME##_stack_empty(const NAME##_stack_t *s) 	\
@@ -152,9 +152,11 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
 /**
  * @brief Macro that is used to define a generic stack
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
- * @param cleanup: function to call on each element on stack cleanup
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
+ * @param CLEANUP: function to call on each element on stack cleanup
+ * @param PTR: flag to tell if the stack stores pointers or not
+ * @param REF: flag to tell if the stack returnes pointers to its data
  */
 #define __DEFINE_STACK_IMPL(TYPE, NAME, CLEANUP, PTR, REF)	\
 	__DEFINE_STACK_STRUCT(TYPE, NAME)            			\
@@ -174,8 +176,8 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
  * @brief Macro that defines a generic stack with no clean up
  * function for its elements
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
  */
 #define DEFINE_STACK(TYPE, NAME) \
 	__DEFINE_STACK_IMPL(TYPE, NAME, __GET_NOOP(NAME), ,&)
@@ -184,9 +186,9 @@ static inline void __##NAME##_stack_noop(TYPE *x) {(void)x;}
  * @brief Macro that defines a generic stack with a clean up
  * function for its elements
  *
- * @param type: type of value the stack will hold
- * @param name: name for the stack type
- * @param cleanup: function that should be called to clean up en element
+ * @param TYPE: type of value the stack will hold
+ * @param NAME: name for the stack type
+ * @param CLEANUP: function that should be called to clean up en element
  */
 #define DEFINE_STACK_CLEANUP(TYPE, NAME, CLEANUP) \
 	__DEFINE_STACK_IMPL(TYPE, NAME, CLEANUP, ,&)
