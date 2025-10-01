@@ -2,6 +2,7 @@ CC := gcc
 CFLAGS := -Wall -Wextra
 BIN_DIR = build
 BUILD ?= debug
+DOCDIR := doc
 
 TARGET := ipp_interpret
 TEST_TARGET := run_tests
@@ -93,8 +94,11 @@ dir_build: | dir_bin
 dir_coverage:
 	@mkdir -p $(COVERAGE_DIR)
 
-.PHONY: all clean test release coverage dir_bin dir_build dir_coverage
+docs :
+	doxygen
+
+.PHONY: all clean test release coverage dir_bin dir_build dir_coverage docs
 
 clean:
-	rm -rf $(BIN_DIR) $(TARGET) $(GENERATED_FILE) $(VALGRIND_LOG_FILE) $(COV_DIR)
+	rm -rf $(BIN_DIR) $(TARGET) $(GENERATED_FILE) $(VALGRIND_LOG_FILE) $(COV_DIR) $(DOCDIR)
 #Fandím ti kocourku :3
