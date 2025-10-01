@@ -39,7 +39,7 @@ void token_move(token_t * src_token, token_t* dest_token) {
 		dest_token->value.string_val = sb_move_string(&src_token->value.string_val);
 		return;
 	case TOKEN_VARIABLE:
-		dest_token->value.var_data.var_name = sb_move_string(&src_token->value.string_val);
+		dest_token->value.var_data.var_name = sb_move_string(&src_token->value.var_data.var_name);
 		return;
 	case TOKEN_BOOL:
 	case TOKEN_EOF:
