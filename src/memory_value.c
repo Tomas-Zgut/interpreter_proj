@@ -122,6 +122,7 @@ StringView memory_value_get_string(const memory_value_t *value) {
         return type_strings[STRING_IDX];
     default:
         assert(false); //should not happen
+        return type_strings[UNDEFINED_IDX];
     }
 }
 
