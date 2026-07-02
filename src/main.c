@@ -1,4 +1,6 @@
 #include<headders/parser.h>
+#include <headders/interpreter.h>
+#include <headders/ret_codes.h>
 #include <string.h>
 /**
  * @brief Function that prints the help message of the program
@@ -121,33 +123,52 @@ int main(int argc, const char* argv[]) {
 	int ret = parse_args(&config,argc,argv);
 
 	if (ret <= 0) {
-		return ret == 0 ? 0 : 1;
+		return ret == 0 ? 0 : INVALID_ARG;
 	}
 	ret = 0;
 	if (config.file == NULL) {
 		fprintf(stderr,"Failed to open %s\n",argv[1]);
-		return 2;
+		return INPUT_FILE_OPEN_ERR;
 	}
 
 	Parser *parser = parser_create(config.file);
 	if (parser == NULL) {
 		fprintf(stderr,"Failed to initialize parser\n!");
-		ret = 3;
+		ret = INTERNAL_ERROR;
 		goto parser_init_err;
 	}
 
 	const parser_ret parser_retval = parser_parse_file(parser);
 	if (parser_retval != PARSER_SUCCESS) {
-		ret = 4;
+		ret = INTERNAL_ERROR;
+		goto parse_fail;
+	}
+
+	if (!parser_check_jump_table(parser)) {
+		ret=SEMANTIC_ERROR;
 		goto parse_fail;
 	}
 
 	ir program_ir = parser_get_ir(parser);
-	parser_free(parser); //parser is no longer necessary
+	jump_table_t jump_table = parser_move_table(parser);
+	parser_free(parser); // no longer necessary
+	Memory memory;
 
+	if (!memory_init(&memory)) {
+		fprintf(stderr,"Failed to initialize interpreters memory!\n") ;
+		ret=INTERNAL_ERROR;
+		goto mem_init_fail;
+	}
 
+	ret = interpret_ir(&program_ir,&memory,&jump_table);
 	ir_free(&program_ir);
+	memory_free(&memory);
+	jump_table_free(&jump_table);
+	return ret;
+	
+mem_init_fail:
 parse_fail:
+	parser_free(parser);
 parser_init_err:
 	if(config.file != stdin) {
 		fclose(config.file);

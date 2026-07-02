@@ -79,4 +79,27 @@ void token_free(token_t *token);
  * @param[out] dest_token: destination token that receives the data ownership
  */ 
 void token_move(token_t * src_token, token_t* dest_token);
+
+/**
+ * @brief Function returns the string representation of variables memory frame
+ * 
+ * @param var: pointer to a variable
+ * 
+ * @returns string representation of varaibel memory frame
+ */
+static inline const char * get_frame_string(variable_t *var) {
+	switch (var->var_frame)
+	{
+	case LF:
+		return "local";
+	
+	case TF:
+		return "temporary";
+	case GF:
+		return "global";
+	default: // all frames should be covered!!
+		assert(false);
+		return "";
+	}
+}
 #endif

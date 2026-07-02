@@ -62,7 +62,7 @@ static inline jump_table_ret jump_table_init(jump_table_t *table)
  * @returns on success pointer to a jump table entry, on fail NULL
  *
  */
-static inline jump_table_entry_t *jump_table_lookup(const jump_table_t *table, const StringView *jump_label)
+static inline const jump_table_entry_t *jump_table_lookup(const jump_table_t *table, const StringView *jump_label)
 {
 	assert(table != NULL);
 	assert(jump_label != NULL);
@@ -193,17 +193,24 @@ static inline const jump_table_entry_t *jump_table_iter_get_entry(const jump_tab
 static inline bool jump_table_check_entries(const jump_table_t *table)
 {
 	assert(table != NULL);
-
+	bool ret_val = true;
 	JUMP_TABLE_ITER(iter, table)
 	{
 		const jump_table_entry_t *entry = jump_table_iter_get_entry(&iter);
-		if (!entry->destination_filled)
-		{
-			return false;
+		const StringView key = jump_table_iter_get_key(&iter);
+		if (!entry->destination_filled) {
+			if (ret_val == true) {
+				fprintf(stderr,"Undefined labels: ");
+				sb_eprint(&key,"");
+				ret_val = false;
+			} else {
+				fprintf(stderr,", ");
+				sb_eprint(&key,"");
+			}
 		}
 	}
-
-	return true;
+	fprintf(stderr,"\n");
+	return ret_val;
 }
 
 #endif

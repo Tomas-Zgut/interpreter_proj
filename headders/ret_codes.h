@@ -1,4 +1,6 @@
-typedef enum {
+    typedef enum {
+    INVALID_ARGS=10,
+    INPUT_FILE_OPEN_ERR=11,
     UNKNOWN_OP_CODE=22,
     INVALID_SYNTAX=23,
     SEMANTIC_ERROR=52,
@@ -8,4 +10,5 @@ typedef enum {
     MISSING_STACK_VALUE=56,
     INVALID_OPERAND_VALUE=57,
     INVALID_STRING_OPERATION=58,
+    INTERNAL_ERROR=99
 } int_ret_code;

@@ -1,7 +1,6 @@
-#include <headders/parser.h>
-#include <headders/memory.h>
-#include <headders/memory_value.h>
-int interpret_ir(const ir* ir,Memory *mem) {
+#include <headders/interpreter.h>
+
+int interpret_ir(const ir* ir,Memory *mem, const jump_table_t* jump_table) {
     int code_pos = 0;
     int code_ret_val = 0;
     int code_pos_move = 1;
@@ -97,3 +96,133 @@ int interpret_ir(const ir* ir,Memory *mem) {
     return 0;
 }
 
+/**
+ * @brief Macro for creating memory access results
+ * 
+ * @param val: value member
+ * @param err: error member
+ * 
+ * @see memory_access_res_t
+ * 
+ * @returns memory acccess result
+ */
+#define MAKE_MA_RES_T(val,err)  \
+(memory_access_res_t) {         \
+    .value=val,                 \
+    .error=err                  \
+}
+
+
+/**
+ * @brief Macro for creating mutable memory access results
+ * 
+ * @param val: value member
+ * @param err: error member
+ * 
+ * @see memory_access_res_mut_t
+ * 
+ * @returns mutable memory acccess result
+ */
+#define MAKE_MA_RES_MUT_T(val,err)  \
+(memory_access_res_mut_t) {         \
+    .value=val,                     \
+    .error=err                      \
+}
+
+/**
+ * @brief Macro used for checking the access to a given memory frame.
+ * 
+ * @par Macro assumes that a memory pointer called `mem` and string view 
+ * called `var_name` already exist in a given scope.
+ * 
+ * @param func: function to call
+ * @param RES_MACRO: macro to use to create the result
+ */
+#define _CHECK_FRAME_ACCESS(func,RES_MACRO)                             \
+do {                                                                    \
+    const memory_value_t* res = memory_global_frame_get(mem,&var_name); \
+    if (res == NULL) {                                                  \
+        return RES_MACRO(NULL,UNDEFINED_VAR);                           \
+    }                                                                   \
+    return RES_MACRO(res,MEM_ACCESS_OK);                                \
+}while(0);
+
+memory_access_res_t memory_get_variable(const Memory* mem, const variable_t* var) {
+    const StringView var_name = sb_get_view(&var->var_name,0);
+    memory_value_t *result = NULL;
+    switch (var->var_frame)
+    {
+        case GF:
+            _CHECK_FRAME_ACCESS(memory_global_frame_get,MAKE_MA_RES_T)
+        case TF:
+            if (!memory_temp_frame_valid(mem)) {
+                return MAKE_MA_RES_T(NULL,NO_FRAME);
+            }
+            _CHECK_FRAME_ACCESS(memory_temp_frame_get,MAKE_MA_RES_T)
+        case LF:
+            if (!memory_local_frame_valid(mem)) {
+                return MAKE_MA_RES_T(NULL,NO_FRAME);
+            }
+            _CHECK_FRAME_ACCESS(memory_local_frame_get,MAKE_MA_RES_T)
+        default:
+            assert(false);
+            return MAKE_MA_RES_T(NULL,INTERNAL_ERROR);
+    }
+}
+
+memory_access_res_mut_t memory_get_variable_mut(const Memory* mem, const variable_t* var) {
+    const StringView var_name = sb_get_view(&var->var_name,0);
+    memory_value_t *result = NULL;
+    switch (var->var_frame)
+    {
+        case GF:
+            _CHECK_FRAME_ACCESS(memory_global_frame_get_mut,MAKE_MA_RES_MUT_T)
+        case TF:
+            if (!memory_temp_frame_valid(mem)) {
+                return MAKE_MA_RES_MUT_T(NULL,NO_FRAME);
+            }
+            _CHECK_FRAME_ACCESS(memory_temp_frame_get_mut,MAKE_MA_RES_MUT_T)
+        case LF:
+            if (!memory_local_frame_valid(mem)) {
+                return MAKE_MA_RES_MUT_T(NULL,NO_FRAME);
+            }
+            _CHECK_FRAME_ACCESS(memory_local_frame_get_mut,MAKE_MA_RES_MUT_T)
+        default:
+            assert(false);
+            return MAKE_MA_RES_MUT_T(NULL,INTERNAL_ERROR);
+    }
+}
+
+
+memory_access_res memory_create_varaible(Memory *mem, const variable_t *var, const memory_value_t *value) {
+    const StringView var_name = sb_get_view(&var->var_name,0);
+    switch (var->var_frame)
+    {
+        case GF:
+            if (!memory_global_frame_insert(mem,&var_name,value)) {
+                return VAR_REDECLARATION;
+            }
+            return MEM_ACCESS_OK;
+        case TF:
+            if (!memory_temp_frame_valid(mem)) {
+                return NO_FRAME;
+            }
+            if (!memory_temp_frame_insert(mem,&var_name,value)) {
+                return VAR_REDECLARATION;
+            }
+            return MEM_ACCESS_OK;
+
+        case LF:
+            if (!memory_local_frame_valid(mem)) {
+                return NO_FRAME;
+            }
+            if (!memory_global_frame_insert(mem,&var_name,value)) {
+                return VAR_REDECLARATION;
+            }
+            return MEM_ACCESS_OK;
+        default:
+            assert(false);
+            return INTERNAL_ERROR;
+    }
+
+}
