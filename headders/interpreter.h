@@ -13,7 +13,7 @@ typedef enum {
     UNDEFINED_VAR=UNDEFINED_VARIABLE_ACCESS,
     NO_STACK=MISSING_STACK_VALUE,
     NO_FRAME=NONEXISTING_MEMORY_FRAME,
-    VAR_REDECLARATION=SEMANTIC_ERROR
+    VAR_REDECLARATION=SEMANTIC_ERROR,
 } memory_access_res;
 
 /**
@@ -32,7 +32,16 @@ typedef struct {
     memory_value_t* value;          // value read from memory
 } memory_access_res_mut_t;
 
-int interpret_ir(const ir* ir,Memory *mem, const jump_table_t* jump_table);
+/**
+ * @brief Function interprets the passed in ir
+ * 
+ * @param ir: pointer to the programs ir
+ * @param mem: pointer to the interpreters memory
+ * @param jump_table: pointer to the jump table
+ * 
+ * @returns the appropriate interpreter return code
+ */
+int_ret_code interpret_ir(ir* ir,Memory *mem, const jump_table_t* jump_table);
 
 /**
  * @brief Function to crate a new variable in memory with a given value
@@ -91,9 +100,18 @@ memory_access_res_t memory_get_variable(const Memory* mem, const variable_t *var
 memory_access_res_mut_t memory_get_variable_mut(const Memory* mem, const variable_t *var);
 
 /**
- * @brief function that converts token value to a memory value
+ * @brief Function that converts a token literal into a memory value
+ * 
+ * 
+ * @param token: pointer to a token
+ * 
+ * @returns `memory_value_t` of the stored value in the token
+ * 
+ * @warning There is an assertion if the passed in token is not a literal!
+ * 
+ * @note This function moves the ownership of data from the token to the returned value.
  */
-memory_value_t token_to_memory_value(const token_t *token);
+memory_value_t token_literal_to_memory_value(token_t *token);
 
 /**
  * @brief Macro for checking the results of a memory operation.
@@ -112,7 +130,7 @@ memory_value_t token_to_memory_value(const token_t *token);
 do {                                                                    \
     const memory_access_res err = _check_ma_ret_val_impl(value,var);    \
     if (err != MEM_ACCESS_OK) {                                         \
-        return err;                                                     \
+        return (int_ret_code)err;                                       \
     }                                                                   \
 } while(0);
 
@@ -131,14 +149,14 @@ static inline memory_access_res _check_ma_ret_val_impl(memory_access_res result,
         case MEM_ACCESS_OK:
             return MEM_ACCESS_OK;
         case UNDEFINED_VAR:
-            fprintf(stderr, "Undefined variable: %s@",get_frame_string(var));
+            fprintf(stderr, "Undefined variable: %s@",token_get_frame_string(var));
             sb_eprint(&var->var_name,"!\n");
             return UNDEFINED_VAR;
         case NO_FRAME:
-            fprintf(stderr, "No %s is defined!\n",get_frame_string(var));
+            fprintf(stderr, "No %s is defined!\n",token_get_frame_string(var));
             return NO_FRAME;
         case VAR_REDECLARATION:
-            fprintf(stderr,"Varaible redaclaration: %s@",get_frame_string(var));
+            fprintf(stderr,"Varaible redaclaration: %s@",token_get_frame_string(var));
             sb_eprint(&var->var_name,"!\n");
             return VAR_REDECLARATION;  
         case NO_STACK: // todo!!!!

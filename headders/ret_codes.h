@@ -1,5 +1,9 @@
-    typedef enum {
-    INVALID_ARGS=10,
+#ifndef __RET_CODES_H__
+#define __RET_CODES_H__
+
+typedef enum {
+    PROGRAM_OK=0,
+    INVALID_ARG=10,
     INPUT_FILE_OPEN_ERR=11,
     UNKNOWN_OP_CODE=22,
     INVALID_SYNTAX=23,
@@ -12,3 +16,4 @@
     INVALID_STRING_OPERATION=58,
     INTERNAL_ERROR=99
 } int_ret_code;
+#endif
