@@ -124,15 +124,6 @@ void __elm_array_clear(ir_elm_t *elements, uint64_t size) {
 |					Public ir functions							|
 *****************************************************************
 */
-
-const ir_elm_t *ir_index_elm(const ir *array, uint64_t index)
-{
-	assert(array != NULL);
-	assert(index < array->size);
-
-	return array->elements + index;
-}
-
 void ir_free(ir *ir) {
     assert(ir != NULL);
 
