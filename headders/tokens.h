@@ -88,21 +88,7 @@ void token_move(token_t * src_token, token_t* dest_token);
  * 
  * @returns string representation of varaibel memory frame
  */
-static inline const char * token_get_frame_string(const variable_t *var) {
-	switch (var->var_frame)
-	{
-	case LF:
-		return "local";
-	
-	case TF:
-		return "temporary";
-	case GF:
-		return "global";
-	default: // all frames should be covered!!
-		assert(false);
-		return "";
-	}
-}
+StringView token_get_frame_view(const variable_t *var);
 /**
  * @brief Function to determine if a given token is a token of a literal value
  * 
@@ -120,7 +106,6 @@ static inline bool token_is_literal(const token_t* token) {
 	case TOKEN_STRING:
 	case TOKEN_FLOAT:
 		return true;
-	
 	default:
 		return false;
 	}

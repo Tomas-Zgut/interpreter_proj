@@ -144,19 +144,23 @@ do {                                                                    \
  * @returns the value of @p result
  */
 static inline memory_access_res _check_ma_ret_val_impl(memory_access_res result, const variable_t *var) {
+    const StringView frame_view = token_get_frame_view(var);
     switch (result)
     {
         case MEM_ACCESS_OK:
             return MEM_ACCESS_OK;
         case UNDEFINED_VAR:
-            fprintf(stderr, "Undefined variable: %s@",token_get_frame_string(var));
+            fprintf(stderr, "Undefined variable: ");
+            sb_eprint(&frame_view,"@");
             sb_eprint(&var->var_name,"!\n");
             return UNDEFINED_VAR;
         case NO_FRAME:
-            fprintf(stderr, "No %s is defined!\n",token_get_frame_string(var));
+            fprintf(stderr, "No ");
+            sb_eprint(&frame_view," frame is defined!\n");
             return NO_FRAME;
         case VAR_REDECLARATION:
-            fprintf(stderr,"Varaible redaclaration: %s@",token_get_frame_string(var));
+            fprintf(stderr,"Varaible redaclaration: ");
+            sb_eprint(&frame_view,"@");
             sb_eprint(&var->var_name,"!\n");
             return VAR_REDECLARATION;  
         case NO_STACK: // todo!!!!

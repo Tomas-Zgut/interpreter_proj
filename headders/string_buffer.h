@@ -310,14 +310,14 @@ typedef struct {
  * 
  * @see __sb_print_impl
  */
-#define sb_print(buff)					\
+#define sb_print(buff,line_end)			\
 	_Generic((buff),					\
 	StringMut *: __sb_print_impl,		\
 	const StringMut *: __sb_print_impl,	\
 	String *: __sb_print_impl,			\
 	const String *: __sb_print_impl,	\
 	const StringView *: __sb_print_impl	\
-)((buff)->data, (buff)->length,stdout,"\n")	
+)((buff)->data, (buff)->length,stdout,line_end)	
 
 /**
  * @brief Overloaded function for printing strings onto stderr
