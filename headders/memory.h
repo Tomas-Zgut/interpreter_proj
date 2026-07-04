@@ -38,8 +38,21 @@ bool memory_init(Memory *memory);
  * @param value: pointer to the value to push
  * 
  * @returns true if the operation was successful, false otherwise
+ * 
+ * @note The values ownership is moved to the stack
  */
-bool memory_value_stack_push(Memory *memory,memory_value_t *value);
+bool memory_value_stack_push(Memory *memory, memory_value_t *value);
+
+/**
+ * @brief function to pop a value to the interpreter's data stack
+ * 
+ * @param memory: pointer to interpreter's memory
+ * 
+ * @returns a pointer to the value at the top of the interpretes value stack on success, NULL otherwise
+ * 
+ * @note the caller needs to move out of the recieved value
+ */
+memory_value_t *memory_value_stack_pop(Memory *memory);
 
 /**
  * @brief function to push an address to the interpreter's call stack
@@ -58,7 +71,7 @@ bool memory_call_stack_push(Memory *memory, uint32_t return_address);
  * 
  * @returns a pointer to the top address on success, NULL otherwise
  */
-uint32_t *memory_call_stack_pop(Memory *memory);
+const uint32_t *memory_call_stack_pop(Memory *memory);
 
 /**
  * @brief fucntion to get a const reference to a variable from the temporary frame

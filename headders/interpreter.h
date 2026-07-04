@@ -52,7 +52,7 @@ int_ret_code interpret_ir(ir* ir,Memory *mem, const jump_table_t* jump_table);
  * 
  * @returns memory_access_res that holds the correct error code to return
  */
-memory_access_res memory_create_varaible(Memory*mem, const variable_t *var, const memory_value_t *value);
+memory_access_res memory_create_variable(Memory*mem, const variable_t *var, const memory_value_t *value);
 
 /**
  * @brief Function to crate a new variable in memory with a default value
@@ -62,9 +62,9 @@ memory_access_res memory_create_varaible(Memory*mem, const variable_t *var, cons
  * 
  * @returns memory_access_res that holds the correct error code to return
  */
-static inline memory_access_res memory_create_varaible_default(Memory*mem, const variable_t *var) {
+static inline memory_access_res memory_create_variable_default(Memory*mem, const variable_t *var) {
     const memory_value_t val = memory_value_create_default();
-    return memory_create_varaible(mem,var,&val);
+    return memory_create_variable(mem,var,&val);
 }
 
 /**
