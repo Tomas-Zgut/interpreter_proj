@@ -96,13 +96,14 @@ static inline bool memory_frame_insert_new_val(memory_frame_t *frame, const Stri
 		if (ret == RH_TABLE_ALLOC_FAIL)
 		{
 			fprintf(stderr, "Memory error! Intepreter ran out of memory!\n");
+			exit(99); // to only option to keep the interface nice
 		}
 		ret = rh_table_insert(&frame->_table, key, out_val);
 	}
 
 	if (ret == RH_TABLE_KEY_FOUND)
 	{
-		fprintf(stderr, "Variable redeclaration attempt!\n");
+		// variable redaclaration attempt
 		return false;
 	}
 

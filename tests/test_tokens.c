@@ -74,3 +74,77 @@ CREATE_TEST(token_tests,token_move) {
 
     TEST_SUCCES
 }
+
+CREATE_TEST(token_tests,is_literal) {
+    token_t int_token = {.type = TOKEN_INT, .value = {.int_val = 1}};
+    token_t string_token = {.type = TOKEN_STRING};
+    token_t bool_token = {.type = TOKEN_BOOL, .value = {.boolean_val = false}};
+    token_t float_token = {.type = TOKEN_FLOAT, .value = {.double_val = 1.0}};
+    token_t nil_token = {.type = TOKEN_NIL};
+    token_t label_token = {.type = TOKEN_LABEL };
+    STRING_FROM_LIT(string_token.value.string_val,"string")
+    STRING_FROM_LIT(label_token.value.string_val,"label")
+
+    TEST_ASSERT(token_is_literal(&int_token)," Int Should be a literal")
+    TEST_ASSERT(token_is_literal(&string_token)," String Should be a literal")
+    TEST_ASSERT(token_is_literal(&bool_token)," Bool Should be a literal")
+    TEST_ASSERT(token_is_literal(&float_token)," Float Should be a literal")
+    TEST_ASSERT(token_is_literal(&nil_token)," Nil Should be a literal")
+    TEST_ASSERT(!token_is_literal(&label_token)," Label Should not be a literal")
+
+    token_free(&int_token);
+    token_free(&string_token);
+    token_free(&bool_token);
+    token_free(&float_token);
+    token_free(&nil_token);
+    token_free(&label_token);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(token_tests,is_varaible) {
+    token_t int_token = {.type = TOKEN_INT, .value = {.int_val = 1}};
+    token_t bool_token = {.type = TOKEN_BOOL, .value = {.boolean_val = false}};
+    token_t float_token = {.type = TOKEN_FLOAT, .value = {.double_val = 1.0}};
+    token_t var_token = {.type = TOKEN_VARIABLE, .value = {.var_data = {.var_frame = GF}}};
+    STRING_FROM_LIT(var_token.value.var_data.var_name,"var")
+
+    TEST_ASSERT(!token_is_variable(&int_token),"Int should not be a varaible!")
+    TEST_ASSERT(!token_is_variable(&bool_token),"Bool should not be a varaible!")
+    TEST_ASSERT(!token_is_variable(&float_token),"Float should not be a varaible!")
+    TEST_ASSERT(token_is_variable(&var_token),"Variable should be a varaible!")
+
+    token_free(&int_token);
+    token_free(&bool_token);
+    token_free(&float_token);
+    token_free(&var_token);
+
+    TEST_SUCCES
+}
+
+CREATE_TEST(token_tests,get_frame_string) {
+    variable_t global_var = {.var_frame = GF};
+    variable_t temp_var = {.var_frame = TF};
+    variable_t local_var = {.var_frame = LF};
+    STRING_FROM_LIT(global_var.var_name,"Gvar")
+    STRING_FROM_LIT(temp_var.var_name,"Tvar")
+    STRING_FROM_LIT(local_var.var_name,"Lvar")
+
+    const StringView expected_g_var_res = VIEW_FROM_LIT("global");
+    const StringView expected_l_var_res = VIEW_FROM_LIT("local");
+    const StringView expected_t_var_res = VIEW_FROM_LIT("temporary");
+
+    const StringView g_var_res = token_get_frame_view(&global_var);
+    const StringView l_var_res = token_get_frame_view(&local_var); 
+    const StringView t_var_res = token_get_frame_view(&temp_var); 
+
+    TEST_ASSERT_EQ(sb_cmp(&expected_g_var_res,&g_var_res),0,"Returned strings should equal!")
+    TEST_ASSERT_EQ(sb_cmp(&expected_l_var_res,&l_var_res),0,"Returned strings should equal!")
+    TEST_ASSERT_EQ(sb_cmp(&expected_t_var_res,&t_var_res),0,"Returned strings should equal!")
+
+    sb_free(&global_var.var_name);
+    sb_free(&temp_var.var_name);
+    sb_free(&local_var.var_name);
+
+    TEST_SUCCES
+}

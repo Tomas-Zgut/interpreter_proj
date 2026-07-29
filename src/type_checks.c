@@ -35,6 +35,7 @@ arg_type_check_t instruction_args_valid(opcode_type opcode, token_t **arg_tokens
 static const operand_type_t token_to_opcode_map[] = {
     [TOKEN_INT]=OP_SYMBOL,
     [TOKEN_STRING]=OP_SYMBOL,
+    [TOKEN_FLOAT]=OP_SYMBOL,
     [TOKEN_BOOL]=OP_SYMBOL,
     [TOKEN_NIL]=OP_SYMBOL,
     [TOKEN_VARIABLE]=OP_VARIABLE,

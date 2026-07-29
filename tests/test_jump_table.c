@@ -118,7 +118,7 @@ CREATE_TEST(jump_table_tests,test_check_entries_empty) {
     TEST_SUCCES
 }
 
-CREATE_TEST(jump_table_tests,test_check_entries_empty_valid) {
+CREATE_TEST(jump_table_tests,test_check_entries_valid) {
     jump_table_t table;
     TEST_MEM_CHECK(jump_table_init,&table)
 
@@ -148,7 +148,7 @@ CREATE_TEST(jump_table_tests,test_check_entries_empty_valid) {
     TEST_SUCCES
 }
 
-CREATE_TEST(jump_table_tests,test_check_entries_empty_invalid) {
+CREATE_TEST(jump_table_tests,test_check_entries_invalid) {
     jump_table_t table;
     TEST_MEM_CHECK(jump_table_init,&table)
 

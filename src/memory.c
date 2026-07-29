@@ -36,8 +36,13 @@ call_stack_init_err:
 bool memory_value_stack_push(Memory *memory, memory_value_t *value) {
     assert(memory != NULL);
     assert(value != NULL);
+    memory_value_t temp = memory_value_move(value);
+    return value_stack_push(&memory->value_stack,&temp);
+}
 
-    return value_stack_push(&memory->value_stack,value);
+memory_value_t *memory_value_stack_pop(Memory *memory) {
+    assert(memory != NULL);
+    return value_stack_pop(&memory->value_stack);
 }
 
 bool memory_call_stack_push(Memory *memory, uint32_t return_address) {
@@ -45,7 +50,7 @@ bool memory_call_stack_push(Memory *memory, uint32_t return_address) {
     return call_stack_push(&memory->call_stack,return_address);
 }
 
-uint32_t *memory_call_stack_pop(Memory *memory) {
+const uint32_t *memory_call_stack_pop(Memory *memory) {
     assert(memory != NULL);
     return call_stack_pop(&memory->call_stack);
 }

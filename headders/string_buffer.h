@@ -8,8 +8,6 @@
 #include <stdio.h>
 #include<string.h>
 
-
-#include"optionals.h"
 /**
  * @brief Struct represents a mutable string type
  */
@@ -312,14 +310,36 @@ typedef struct {
  * 
  * @see __sb_print_impl
  */
-#define sb_print(buff)					\
+#define sb_print(buff,line_end)			\
 	_Generic((buff),					\
 	StringMut *: __sb_print_impl,		\
 	const StringMut *: __sb_print_impl,	\
 	String *: __sb_print_impl,			\
 	const String *: __sb_print_impl,	\
 	const StringView *: __sb_print_impl	\
-)((buff)->data, (buff)->length)	
+)((buff)->data, (buff)->length,stdout,line_end)	
+
+/**
+ * @brief Overloaded function for printing strings onto stderr
+ * 
+ * @par Function prints a string type.
+ * Supported buffer types:
+ * - StringMut  -> mutable string type @see StringMut
+ * - StringVeiw -> non owning immutable view into a buffer @see StringView
+ * - String -> owning immutable string type @see String
+ * 
+ * @warning Function only supports printng strings whose length is < INT32_MAX
+ * 
+ * @see __sb_print_impl
+ */
+#define sb_eprint(buff,line_end)		\
+	_Generic((buff),					\
+	StringMut *: __sb_print_impl,		\
+	const StringMut *: __sb_print_impl,	\
+	String *: __sb_print_impl,			\
+	const String *: __sb_print_impl,	\
+	const StringView *: __sb_print_impl	\
+)((buff)->data, (buff)->length,stderr,line_end)
 
 /**
  * @brief Overloaded function for comapring strings
@@ -480,9 +500,9 @@ bool __sb_concat_mut_impl(StringMut *out, const char *buff1, size_t buff_len1, c
  * 
  * @warning Function only supports printng strings whose length is < INT32_MAX
  */
-static inline void __sb_print_impl(const char *buff, size_t buff_len) {
+static inline void __sb_print_impl(const char *buff, size_t buff_len,FILE*stream,const char*line_end) {
 	assert(buff_len < INT32_MAX);
-	printf("%.*s\n",(int32_t)buff_len, buff);
+	fprintf(stream,"%.*s%s",(int32_t)buff_len, buff,line_end);
 }
 
 /**
@@ -574,8 +594,5 @@ static inline StringMut sb_to_mutable(String *string) {
 	memset(string,0,sizeof(String));
 	return new_string;
 }
-DEFINE_OPTIONAL(String,str)
-DEFINE_OPTIONAL(StringView,str_view)
-DEFINE_OPTIONAL(StringMut,str_mut)
 
 #endif

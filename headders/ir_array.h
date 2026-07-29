@@ -78,16 +78,6 @@ uint64_t ir_array_size(const ir_array *array);
 void ir_array_free(ir_array *array);
 
 /**
- * @brief function to provide read only access to a given element in the ir
- *
- * @param array: pointer to the ir of the program
- * @param index: index of an element to access
- *
- * @returns a pointer to the ir_elm_t at the given index
- */
-const ir_elm_t *ir_index_elm(const ir *array, uint64_t index);
-
-/**
  * @brief function to free the programs ir
  *
  * @param ir: pointer to the programs ir

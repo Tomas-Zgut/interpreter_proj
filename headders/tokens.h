@@ -11,6 +11,7 @@ typedef enum {
 	TOKEN_INSTRUCTION,	// token for instructions
 	TOKEN_INT,			// token for integer literals
 	TOKEN_STRING,		// token for string literals
+	TOKEN_FLOAT,		// token for floating point literals
 	TOKEN_BOOL,			// token for boolean literals
 	TOKEN_NIL,			// token for nill literals
 	TOKEN_VARIABLE,		// token for varaible names
@@ -42,7 +43,7 @@ typedef struct {
  */
 typedef union {
 	String string_val;		// string literal
-	uint64_t int_val;		// integer literal
+	int64_t int_val;		// integer literal
 	bool boolean_val;		// boolean literal
 	double double_val;		// doube literal
 	variable_t var_data;	// data for a variable
@@ -79,4 +80,46 @@ void token_free(token_t *token);
  * @param[out] dest_token: destination token that receives the data ownership
  */ 
 void token_move(token_t * src_token, token_t* dest_token);
+
+/**
+ * @brief Function returns the string representation of variables memory frame
+ * 
+ * @param var: pointer to a variable
+ * 
+ * @returns string representation of varaibel memory frame
+ */
+StringView token_get_frame_view(const variable_t *var);
+/**
+ * @brief Function to determine if a given token is a token of a literal value
+ * 
+ * @param token: pointer to a token
+ * 
+ * @returns true if the given token holds a literal value false otherwise
+ */
+
+static inline bool token_is_literal(const token_t* token) {
+	switch (token->type)
+	{
+	case TOKEN_BOOL:
+	case TOKEN_NIL:
+	case TOKEN_INT:
+	case TOKEN_STRING:
+	case TOKEN_FLOAT:
+		return true;
+	default:
+		return false;
+	}
+}
+
+/**
+ * @brief Function to determine if a given token is a  token of a variable
+ * 
+ * @param token: pointer to a token
+ * 
+ * @returns true if the givne token holds a variable false otherwise
+ */
+static inline bool token_is_variable(const token_t* token) {
+	return token->type == TOKEN_VARIABLE;
+}
+
 #endif

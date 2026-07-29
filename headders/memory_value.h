@@ -9,8 +9,6 @@ typedef struct
 	char _unused; // unused, because nill only has 1 value
 } nill_t;
 
-DEFINE_OPTIONAL(nill_t,nill)
-
 /**
  * @brief struct representing the `type_string` type
  */

@@ -104,4 +104,32 @@ ir parser_get_ir(Parser *parser);
  */
 void parser_free(Parser *parser);
 
+/**
+ * @brief Function extracts the jump table from the parser. This 
+ * fucntion transfers the onwership of the jump table from the parser to the caller!.
+ * 
+ * @param parser: ointer to a parser
+ * 
+ * @returns pointer to the jump table that was built during parsing of the program
+ * 
+ * @warning calling this function more than once triggers an assertion!
+ */
+static inline jump_table_t parser_move_table(Parser *parser) {
+	assert(parser!= NULL);
+	jump_table_t tmp = parser->jump_table;
+	memset(&parser->jump_table,0,sizeof(jump_table_t));
+	return tmp;
+}
+
+/**
+ * @brief Function to check if all the jump table entries are valid
+ * 
+ * @param parser: pointer to a parser
+ * 
+ * @returns true if all the labels are valid, false otherwise.
+ */
+static inline bool parser_check_jump_table(const Parser* parser) {
+	return  jump_table_check_entries(&parser->jump_table);
+}
+
 #endif
